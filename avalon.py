@@ -1,4 +1,5 @@
 import random
+import string
 import flask
 import json
 import copy
@@ -33,13 +34,9 @@ quest_configurations = {
   10: [3, 4, 4, 5, 5]
 }
 
-@app.route('/api/list')
-def list_games():
-  return flask.jsonify({'games': games.keys()})
-
 @app.route('/api/create', methods=['POST'])
 def create_game():
-  game_id = str(len(games))
+  game_id = random_id()
   games[game_id] = {'playerNames': {}, 'roles': {}, 'playerOrder': [], 'quests': []}
   return flask.jsonify({'gameId': game_id})
 
@@ -54,7 +51,7 @@ def join_game(game_id, player_name):
     return flask.jsonify({'error': True})
 
   # generate random player id and associate it with their name
-  player_id = str(int(random.random() * 1000000))
+  player_id = random_id()
   game['playerNames'][player_id] = player_name
 
   return flask.jsonify({'userId': player_id})
@@ -177,6 +174,9 @@ def vote_in_quest(game_id, player_id, vote):
     })
 
   return flask.jsonify({})
+
+def random_id():
+  return ''.join(random.choices(string.ascii_letters + string.digits, k=6))
 
 def is_game_started(game):
   return bool(game['roles'])
