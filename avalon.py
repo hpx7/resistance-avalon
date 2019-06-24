@@ -130,15 +130,14 @@ def vote_for_proposal(game_id, player_id, vote):
   current_quest = game['quests'][-1]
   vote = bool(int(vote))
 
-  # verify quest proposal has been made and quest voting isn't complete
-  if not(len(current_quest['members']) > 0 and len(current_quest['votes']) < num_players(game)):
+  # verify proposal has been made and proposal voting isn't complete
+  if not(len(current_quest['members']) > 0 and not is_proposal_voting_complete(game, current_quest)):
     return flask.jsonify({'error': True})
 
   current_quest['votes'][player_name] = vote
 
   # move to next leader if proposal was rejected
-  if is_proposal_voting_complete(game, current_quest) and not proposal_accepted(game, current_quest):
-    # TODO check if 5 consecutive fails
+  if is_proposal_voting_complete(game, current_quest) and not proposal_accepted(game, current_quest) and current_quest['attemptNumber'] < 5:
     game['quests'].append({
       'questNumber': current_quest['questNumber'],
       'attemptNumber': current_quest['attemptNumber'] + 1,
@@ -160,8 +159,8 @@ def vote_in_quest(game_id, player_id, vote):
   current_quest = game['quests'][-1]
   vote = bool(int(vote))
 
-  # verify voting for the quest is complete and we are in the quest and our vote is valid
-  if not(is_proposal_voting_complete(game, current_quest) and player_name in current_quest['members'] and is_valid_quest_vote(game, player_id, vote)):
+  # verify proposal voting is complete, quest voting isn't complete, we are in the quest, and our vote is valid
+  if not(is_proposal_voting_complete(game, current_quest) and not is_quest_voting_complete(game, current_quest) and player_name in current_quest['members'] and is_valid_quest_vote(game, player_id, vote)):
     return flask.jsonify({'error': True})
 
   current_quest['results'][player_name] = vote
@@ -180,7 +179,7 @@ def vote_in_quest(game_id, player_id, vote):
   return flask.jsonify({})
 
 def is_game_started(game):
-  return len(game['roles']) > 0
+  return bool(game['roles'])
 
 def num_players(game):
   return len(game['playerNames'])
@@ -227,6 +226,7 @@ def is_game_over(game):
 
 def did_quest_succeed(game, quest):
   num_fails = len(quest['results']) - sum(quest['results'].values())
+  # in games with 7 or more people, round 4 requires at least two failures
   return num_fails == 0 or quest['questNumber'] == 4 and num_players(game) > 6 and num_fails == 1
 
 def get_next_leader(game):
