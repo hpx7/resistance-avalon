@@ -88,14 +88,15 @@ def start_game(game_id):
 @app.route('/api/state/<game_id>/<player_id>')
 def get_state(game_id, player_id):
   game = games.get(game_id)
-  if game is None or player_id not in game['playerNames']:
+  player_name = game['playerNames'].get(player_id)
+  if game is None or player_name is None:
     return flask.jsonify({'error': True})
 
   return flask.jsonify({
     'players': game['playerOrder'] or list(game['playerNames'].values()),
     'roleList': list(game['roles'].values()),
     'questConfigurations': quest_configurations.get(num_players(game)),
-    'myName': game['playerNames'][player_id],
+    'myName': player_name,
     'myRole': get_role(game, player_id),
     'playerHints': get_player_hints(game, player_id),
     'quests': sanitize_quests(game)
@@ -104,12 +105,12 @@ def get_state(game_id, player_id):
 @app.route('/api/propose/<game_id>/<player_id>', methods=['POST'])
 def propose_quest(game_id, player_id):
   game = games.get(game_id)
+  player_name = game['playerNames'].get(player_id)
   proposed_members = flask.request.json.get('proposal')
-  if game is None or proposed_members is None or not is_game_started(game) or player_id not in game['playerNames']:
+  if game is None or player_name is None or proposed_members is None or not is_game_started(game):
     return flask.jsonify({'error': True})
 
   current_quest = game['quests'][-1]
-  player_name = game['playerNames'][player_id]
 
   # verify we are the quest leader, voting for the quest hasn't begun, and the correct number of players are proposed
   if not (current_quest['leader'] == player_name and len(current_quest['votes']) == 0 and len(proposed_members) == quest_size(game, current_quest)):
@@ -122,11 +123,11 @@ def propose_quest(game_id, player_id):
 @app.route('/api/proposal/vote/<game_id>/<player_id>/<vote>', methods=['POST'])
 def vote_for_proposal(game_id, player_id, vote):
   game = games.get(game_id)
-  if game is None or not is_game_started(game) or player_id not in game['playerNames']:
+  player_name = game['playerNames'].get(player_id)
+  if game is None or player_name is None or not is_game_started(game):
     return flask.jsonify({'error': True})
 
   current_quest = game['quests'][-1]
-  player_name = game['playerNames'][player_id]
   vote = bool(int(vote))
 
   # verify quest proposal has been made and quest voting isn't complete
@@ -152,11 +153,11 @@ def vote_for_proposal(game_id, player_id, vote):
 @app.route('/api/quest/vote/<game_id>/<player_id>/<vote>', methods=['POST'])
 def vote_in_quest(game_id, player_id, vote):
   game = games.get(game_id)
-  if game is None or not is_game_started(game) or is_game_over(game) or player_id not in game['playerNames']:
+  player_name = game['playerNames'].get(player_id)
+  if game is None or player_name is None or not is_game_started(game) or is_game_over(game):
     return flask.jsonify({'error': True})
 
   current_quest = game['quests'][-1]
-  player_name = game['playerNames'][player_id]
   vote = bool(int(vote))
 
   # verify voting for the quest is complete and we are in the quest and our vote is valid
