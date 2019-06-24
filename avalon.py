@@ -197,9 +197,9 @@ def get_player_hints(game, player_id):
 def sanitize_quests(game):
   quests = copy.deepcopy(game['quests'])
   # mask in-progress voting
-  for i in range(len(game['quests'])):
-    quests[i]['votes'] = quests[i]['votes'] if is_proposal_voting_complete(game, quests[i]) else {}
-    quests[i]['results'] = list(quests[i]['results'].values()) if is_proposal_voting_complete(game, quests[i]) else {}
+  for quest in quests:
+    quest['votes'] = quest['votes'] if is_proposal_voting_complete(game, quest) else {}
+    quest['results'] = list(quest['results'].values()) if is_quest_voting_complete(game, quest) else []
   return quests
 
 def quest_size(game, quest):
