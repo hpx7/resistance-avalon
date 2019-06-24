@@ -91,14 +91,13 @@ def get_state(game_id, player_id):
   if game is None or player_id not in game['playerNames']:
     return flask.jsonify({'error': True})
 
-  role = game['roles'].get(player_id)
   return flask.jsonify({
     'players': game['playerOrder'] or list(game['playerNames'].values()),
     'roleList': list(game['roles'].values()),
     'questConfigurations': quest_configurations.get(num_players(game)),
     'myName': game['playerNames'][player_id],
-    'myRole': role,
-    'playerHints': get_player_hints(game, role, player_id),
+    'myRole': get_role(game, player_id),
+    'playerHints': get_player_hints(game, player_id),
     'quests': sanitize_quests(game)
   })
 
@@ -185,10 +184,13 @@ def is_game_started(game):
 def num_players(game):
   return len(game['playerNames'])
 
-def get_player_hints(game, role, player_id):
+def get_role(game, player_id):
+  return game['roles'].get(player_id)
+
+def get_player_hints(game, player_id):
   player_hints = []
   for other_player_id, other_role in game['roles'].items():
-    if other_player_id != player_id and other_role in role_knowledge[role]:
+    if other_player_id != player_id and other_role in role_knowledge[get_role(game, player_id)]:
       player_hints.append(game['playerNames'][other_player_id])
   return player_hints
 
@@ -211,8 +213,7 @@ def is_proposal_voting_complete(game, quest):
   return len(quest['votes']) == num_players(game)
 
 def is_valid_quest_vote(game, player_id, vote):
-  role = game['roles'][player_id]
-  return vote or role in evil_characters
+  return vote or get_role(game, player_id) in evil_characters
 
 def is_quest_voting_complete(game, quest):
   return len(quest['results']) == quest_size(game, quest)
