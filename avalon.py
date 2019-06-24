@@ -187,6 +187,7 @@ def get_player_hints(game, role, player_id):
 
 def sanitize_quests(game):
   quests = copy.deepcopy(game['quests'])
+  # mask incomplete voting
   for i in range(len(game['quests'])):
     quests[i]['votes'] = quests[i]['votes'] if i < len(game['quests']) - 1 or is_proposal_voting_complete(game, quests[i]) else {}
     quests[i]['results'] = list(quests[i]['results'].values()) if i < len(game['quests']) - 1 or is_proposal_voting_complete(game, quests[i]) else {}
