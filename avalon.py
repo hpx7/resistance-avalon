@@ -6,6 +6,7 @@ import os
 
 app = flask.Flask(__name__)
 
+# in-memory database
 games = {}
 
 # which roles have knowledge of which other roles
@@ -19,6 +20,8 @@ role_knowledge = {
   'assasin': ['morgana', 'mordred', 'minion'],
   'minion': ['morgana', 'mordred', 'assasin', 'minion']
 }
+
+evil_characters = {'morgana', 'mordred', 'oberon', 'assasin', 'minion'}
 
 # how many people go on quests per quest based on the number of players
 quest_configurations = {
@@ -206,7 +209,7 @@ def is_proposal_voting_complete(game, quest):
 
 def is_valid_quest_vote(game, player_id, vote):
   role = game['roles'][player_id]
-  return vote or role in ['morgana', 'mordred', 'oberon', 'assasin', 'minion']
+  return vote or role in evil_characters
 
 def is_quest_voting_complete(game, quest):
   return len(quest['results']) == quest_size(game, quest)
