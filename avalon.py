@@ -95,6 +95,7 @@ def get_state(game_id, player_id):
   return flask.jsonify({
     'players': game['playerOrder'] or list(game['playerNames'].values()),
     'roleList': list(game['roles'].values()),
+    'questConfigurations': quest_configurations.get(num_players(game)),
     'myName': game['playerNames'][player_id],
     'myRole': role,
     'playerHints': get_player_hints(game, role, player_id),
