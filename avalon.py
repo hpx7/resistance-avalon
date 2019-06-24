@@ -8,13 +8,13 @@ import os
 app = flask.Flask(__name__)
 
 # in-memory database
-games = {}
+games = []
 
 # which roles have knowledge of which other roles
 role_knowledge = {
   'merlin': ['morgana', 'assasin', 'minion'],
   'percival': ['merlin', 'morgana'],
-  'loyal servent': [],
+  'loyal servant': [],
   'morgana': ['mordred', 'assasin', 'minion'],
   'mordred': ['morgana', 'assasin', 'minion'],
   'oberon': [],
@@ -37,40 +37,40 @@ quest_configurations = {
 @app.route('/api/create', methods=['POST'])
 def create_game():
   game_id = random_id()
-  games[game_id] = {'playerNames': {}, 'roles': {}, 'playerOrder': [], 'quests': []}
+  games.append({'id': game_id, 'players': [], 'quests': []})
   return flask.jsonify({'gameId': game_id})
 
 @app.route('/api/join/<game_id>/<player_name>', methods=['POST'])
 def join_game(game_id, player_name):
-  game = games.get(game_id)
+  game = find_game(game_id)
   if game is None or is_game_started(game):
     return flask.jsonify({'error': True})
 
   # verify no duplicate name
-  if player_name in game['playerNames'].values():
+  if any(player['name'] == player_name for player in game['players']):
     return flask.jsonify({'error': True})
 
   # generate random player id and associate it with their name
   player_id = random_id()
-  game['playerNames'][player_id] = player_name
+  game['players'].append({'id': player_id, 'name': player_name, 'role': None})
 
-  return flask.jsonify({'userId': player_id})
+  return flask.jsonify({'playerId': player_id})
 
 @app.route('/api/start/<game_id>', methods=['POST'])
 def start_game(game_id):
-  game = games.get(game_id)
+  game = find_game(game_id)
   role_list = flask.request.json.get('roleList')
   player_order = flask.request.json['playerOrder']
   if game is None or role_list is None or player_order is None or is_game_started(game):
     return flask.jsonify({'error': True})
 
-  # verify number of roles
-  if len(role_list) != len(game['playerNames']) or len(role_list) not in quest_configurations:
+  # verify players and number of roles
+  if not(sorted(player_order) == sorted([player['name'] for player in game['players']]) and len(role_list) == len(player_order) and len(role_list) in quest_configurations):
     return flask.jsonify({'error': True})
 
   # randomly assign roles and choose a starting mission leader
-  game['roles'] = dict(zip(game['playerNames'].keys(), random.sample(role_list, len(role_list))))
-  game['playerOrder'] = player_order
+  shuffled_roles = random.sample(role_list, len(role_list))
+  game['players'] = [{'id': find_player(game, 'name', name)['id'], 'name': name, 'role': role} for name, role in zip(player_order, shuffled_roles)]
   game['quests'].append({
     'questNumber': 1,
     'attemptNumber': 1,
@@ -84,33 +84,33 @@ def start_game(game_id):
 
 @app.route('/api/state/<game_id>/<player_id>')
 def get_state(game_id, player_id):
-  game = games.get(game_id)
-  player_name = game['playerNames'].get(player_id)
-  if game is None or player_name is None:
+  game = find_game(game_id)
+  player = find_player(game, 'id', player_id)
+  if game is None or player is None:
     return flask.jsonify({'error': True})
 
   return flask.jsonify({
-    'players': game['playerOrder'] or list(game['playerNames'].values()),
-    'roleList': list(game['roles'].values()),
+    'players': [player['name'] for player in game['players']],
+    'roleList': [player['role'] for player in game['players']],
     'questConfigurations': quest_configurations.get(num_players(game)),
-    'myName': player_name,
-    'myRole': get_role(game, player_id),
-    'playerHints': get_player_hints(game, player_id),
+    'myName': player['name'],
+    'myRole': player['role'],
+    'playerHints': get_player_hints(game, player),
     'quests': sanitize_quests(game)
   })
 
 @app.route('/api/propose/<game_id>/<player_id>', methods=['POST'])
 def propose_quest(game_id, player_id):
-  game = games.get(game_id)
-  player_name = game['playerNames'].get(player_id)
+  game = find_game(game_id)
+  player = find_player(game, 'id', player_id)
   proposed_members = flask.request.json.get('proposal')
-  if game is None or player_name is None or proposed_members is None or not is_game_started(game):
+  if game is None or player is None or proposed_members is None or not is_game_started(game):
     return flask.jsonify({'error': True})
 
   current_quest = game['quests'][-1]
 
   # verify we are the quest leader, voting for the quest hasn't begun, and the correct number of players are proposed
-  if not (current_quest['leader'] == player_name and len(current_quest['votes']) == 0 and len(proposed_members) == quest_size(game, current_quest)):
+  if not (current_quest['leader'] == player['name'] and len(current_quest['votes']) == 0 and len(proposed_members) == quest_size(game, current_quest)):
     return flask.jsonify({'error': True})
 
   current_quest['members'] = proposed_members
@@ -119,9 +119,9 @@ def propose_quest(game_id, player_id):
 
 @app.route('/api/proposal/vote/<game_id>/<player_id>/<vote>', methods=['POST'])
 def vote_for_proposal(game_id, player_id, vote):
-  game = games.get(game_id)
-  player_name = game['playerNames'].get(player_id)
-  if game is None or player_name is None or not is_game_started(game):
+  game = find_game(game_id)
+  player = find_player(game, 'id', player_id)
+  if game is None or player is None or not is_game_started(game):
     return flask.jsonify({'error': True})
 
   current_quest = game['quests'][-1]
@@ -131,7 +131,7 @@ def vote_for_proposal(game_id, player_id, vote):
   if not(len(current_quest['members']) > 0 and not is_proposal_voting_complete(game, current_quest)):
     return flask.jsonify({'error': True})
 
-  current_quest['votes'][player_name] = vote
+  current_quest['votes'][player['name']] = vote
 
   # move to next leader if proposal was rejected
   if is_proposal_voting_complete(game, current_quest) and not proposal_accepted(game, current_quest) and current_quest['attemptNumber'] < 5:
@@ -148,19 +148,19 @@ def vote_for_proposal(game_id, player_id, vote):
 
 @app.route('/api/quest/vote/<game_id>/<player_id>/<vote>', methods=['POST'])
 def vote_in_quest(game_id, player_id, vote):
-  game = games.get(game_id)
-  player_name = game['playerNames'].get(player_id)
-  if game is None or player_name is None or not is_game_started(game) or is_game_over(game):
+  game = find_game(game_id)
+  player = find_player(game, 'id', player_id)
+  if game is None or player is None or not is_game_started(game) or is_game_over(game):
     return flask.jsonify({'error': True})
 
   current_quest = game['quests'][-1]
   vote = bool(int(vote))
 
   # verify proposal voting is complete, quest voting isn't complete, we are in the quest, and our vote is valid
-  if not(is_proposal_voting_complete(game, current_quest) and not is_quest_voting_complete(game, current_quest) and player_name in current_quest['members'] and is_valid_quest_vote(game, player_id, vote)):
+  if not(is_proposal_voting_complete(game, current_quest) and not is_quest_voting_complete(game, current_quest) and player['name'] in current_quest['members'] and is_valid_quest_vote(game, player, vote)):
     return flask.jsonify({'error': True})
 
-  current_quest['results'][player_name] = vote
+  current_quest['results'][player['name']] = vote
 
   # move on to next round if all results have been collected (or do nothing if game is over)
   if is_quest_voting_complete(game, current_quest) and not is_game_over(game):
@@ -178,21 +178,23 @@ def vote_in_quest(game_id, player_id, vote):
 def random_id():
   return ''.join(random.choices(string.ascii_letters + string.digits, k=6))
 
+def find_game(game_id):
+  for game in games:
+    if game['id'] == game_id:
+      return game
+  return None
+
+def find_player(game, attr, val):
+  return next((player for player in game['players'] if player[attr] == val), None)
+
 def is_game_started(game):
-  return bool(game['roles'])
+  return bool(game['quests'])
 
 def num_players(game):
-  return len(game['playerNames'])
+  return len(game['players'])
 
-def get_role(game, player_id):
-  return game['roles'].get(player_id)
-
-def get_player_hints(game, player_id):
-  player_hints = []
-  for other_player_id, other_role in game['roles'].items():
-    if other_player_id != player_id and other_role in role_knowledge[get_role(game, player_id)]:
-      player_hints.append(game['playerNames'][other_player_id])
-  return player_hints
+def get_player_hints(game, player):
+  return [p['name'] for p in game['players'] if p['id'] != player['id'] and p['role'] in role_knowledge[player['role']]]
 
 def sanitize_quests(game):
   quests = copy.deepcopy(game['quests'])
@@ -212,8 +214,8 @@ def proposal_accepted(game, quest):
 def is_proposal_voting_complete(game, quest):
   return len(quest['votes']) == num_players(game)
 
-def is_valid_quest_vote(game, player_id, vote):
-  return vote or get_role(game, player_id) in evil_characters
+def is_valid_quest_vote(game, player, vote):
+  return vote or player['role'] in evil_characters
 
 def is_quest_voting_complete(game, quest):
   return len(quest['results']) == quest_size(game, quest)
@@ -231,5 +233,5 @@ def did_quest_succeed(game, quest):
 
 def get_next_leader(game):
   current_quest = game['quests'][-1]
-  idx = game['playerOrder'].index(current_quest['leader'])
-  return game['playerOrder'][(idx + 1) % len(game['playerOrder'])]
+  idx = game['players'].index(find_player(game, 'name', current_quest['leader']))
+  return game['players'][(idx + 1) % num_players(game)]
