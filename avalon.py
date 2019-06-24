@@ -130,7 +130,7 @@ def vote_for_proposal(game_id, player_id, vote):
   vote = bool(int(vote))
 
   # verify quest proposal has been made and quest voting isn't complete
-  if not(len(current_quest['members']) > 0 and len(current_quest['votes']) < len(game['roles'])):
+  if not(len(current_quest['members']) > 0 and len(current_quest['votes']) < num_players(game)):
     return flask.jsonify({'error': True})
 
   current_quest['votes'][player_name] = vote
@@ -181,6 +181,9 @@ def vote_in_quest(game_id, player_id, vote):
 def is_game_started(game):
   return len(game['roles']) > 0
 
+def num_players(game):
+  return len(game['playerNames'])
+
 def get_player_hints(game, role, player_id):
   player_hints = []
   for other_player_id, other_role in game['roles'].items():
@@ -197,15 +200,14 @@ def sanitize_quests(game):
   return quests
 
 def quest_size(game, quest):
-  num_players = len(game['roles'])
   quest_number = quest['questNumber'] - 1 # convert 1-indexed quest number to 0-indexed array index
-  return quest_configurations[num_players][quest_number]
+  return quest_configurations[num_players(game)][quest_number]
 
 def proposal_accepted(game, quest):
-  return sum(quest['votes'].values()) * 2 > len(game['roles'])
+  return sum(quest['votes'].values()) * 2 > num_players(game)
 
 def is_proposal_voting_complete(game, quest):
-  return len(quest['votes']) == len(game['roles'])
+  return len(quest['votes']) == num_players(game)
 
 def is_valid_quest_vote(game, player_id, vote):
   role = game['roles'][player_id]
@@ -222,7 +224,7 @@ def is_game_over(game):
 
 def did_quest_succeed(game, quest):
   num_fails = len(quest['results']) - sum(quest['results'].values())
-  return num_fails == 0 or quest['questNumber'] == 4 and len(game['roles']) > 6 and num_fails == 1
+  return num_fails == 0 or quest['questNumber'] == 4 and num_players(game) > 6 and num_fails == 1
 
 def get_next_leader(game):
   current_quest = game['quests'][-1]
