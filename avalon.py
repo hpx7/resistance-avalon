@@ -75,7 +75,7 @@ def start_game(game_id):
   game['quests'].append({
     'questNumber': 1,
     'attemptNumber': 1,
-    'leader': random.choice(list(game['playerNames'].values())),
+    'leader': random.choice([player['name'] for player in game['players']]),
     'members': [],
     'votes': [],
     'results': []
