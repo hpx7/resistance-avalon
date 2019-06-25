@@ -22,6 +22,7 @@ role_knowledge = {
   'minion': ['morgana', 'mordred', 'assasin', 'minion']
 }
 
+# which characters are evil
 evil_characters = {'morgana', 'mordred', 'oberon', 'assasin', 'minion'}
 
 # how many people go on quests per quest based on the number of players
@@ -76,8 +77,8 @@ def start_game(game_id):
     'attemptNumber': 1,
     'leader': random.choice(list(game['playerNames'].values())),
     'members': [],
-    'votes': {},
-    'results': {}
+    'votes': [],
+    'results': []
   })
 
   return flask.jsonify({'leader': game['quests'][0]['leader']})
@@ -131,7 +132,7 @@ def vote_for_proposal(game_id, player_id, vote):
   if not(len(current_quest['members']) > 0 and not is_proposal_voting_complete(game, current_quest)):
     return flask.jsonify({'error': True})
 
-  current_quest['votes'][player['name']] = vote
+  current_quest['votes'].append({'player': player['name'], 'vote': vote})
 
   # move to next leader if proposal was rejected
   if is_proposal_voting_complete(game, current_quest) and not proposal_accepted(game, current_quest) and current_quest['attemptNumber'] < 5:
@@ -140,8 +141,8 @@ def vote_for_proposal(game_id, player_id, vote):
       'attemptNumber': current_quest['attemptNumber'] + 1,
       'leader': get_next_leader(game),
       'members': current_quest['members'],
-      'votes': {},
-      'results': {}
+      'votes': [],
+      'results': []
     })
 
   return flask.jsonify({})
@@ -160,7 +161,7 @@ def vote_in_quest(game_id, player_id, vote):
   if not(is_proposal_voting_complete(game, current_quest) and not is_quest_voting_complete(game, current_quest) and player['name'] in current_quest['members'] and is_valid_quest_vote(game, player, vote)):
     return flask.jsonify({'error': True})
 
-  current_quest['results'][player['name']] = vote
+  current_quest['results'].append({'player': player['name'], 'vote': vote})
 
   # move on to next round if all results have been collected (or do nothing if game is over)
   if is_quest_voting_complete(game, current_quest) and not is_game_over(game):
@@ -169,8 +170,8 @@ def vote_in_quest(game_id, player_id, vote):
       'attemptNumber': 1,
       'leader': get_next_leader(game),
       'members': [],
-      'votes': {},
-      'results': {}
+      'votes': [],
+      'results': []
     })
 
   return flask.jsonify({})
@@ -200,8 +201,8 @@ def sanitize_quests(game):
   quests = copy.deepcopy(game['quests'])
   # mask in-progress voting
   for quest in quests:
-    quest['votes'] = quest['votes'] if is_proposal_voting_complete(game, quest) else {}
-    quest['results'] = list(quest['results'].values()) if is_quest_voting_complete(game, quest) else []
+    quest['votes'] = quest['votes'] if is_proposal_voting_complete(game, quest) else []
+    quest['results'] = [result['vote'] for result in quest['results']] if is_quest_voting_complete(game, quest) else []
   return quests
 
 def quest_size(game, quest):
@@ -209,7 +210,7 @@ def quest_size(game, quest):
   return quest_configurations[num_players(game)][quest_number]
 
 def proposal_accepted(game, quest):
-  return sum(quest['votes'].values()) * 2 > num_players(game)
+  return sum(vote['vote'] for vote in quest['votes']) * 2 > num_players(game)
 
 def is_proposal_voting_complete(game, quest):
   return len(quest['votes']) == num_players(game)
@@ -227,11 +228,11 @@ def is_game_over(game):
   return num_successes > 2 or num_failures > 2
 
 def did_quest_succeed(game, quest):
-  num_fails = len(quest['results']) - sum(quest['results'].values())
+  num_fails = len(quest['results']) - sum(result['vote'] for result in quest['results'])
   # in games with 7 or more people, round 4 requires at least two failures
   return num_fails == 0 or quest['questNumber'] == 4 and num_players(game) > 6 and num_fails == 1
 
 def get_next_leader(game):
   current_quest = game['quests'][-1]
   idx = game['players'].index(find_player(game, 'name', current_quest['leader']))
-  return game['players'][(idx + 1) % num_players(game)]
+  return game['players'][(idx + 1) % num_players(game)]['name']
