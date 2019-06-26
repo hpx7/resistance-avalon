@@ -116,7 +116,7 @@ def vote_for_proposal(quest_id, player_id, vote):
   if is_proposal_voting_complete(game, quest) and not proposal_accepted(game, quest) and quest['attemptNumber'] < 5:
     games.update_one(
       {'quests.id': quest_id},
-      {'$push': {'quests': {
+      {'$push': {'quests': { '$each': [{
         'id': random_id(),
         'questNumber': quest['questNumber'],
         'attemptNumber': quest['attemptNumber'] + 1,
@@ -125,7 +125,7 @@ def vote_for_proposal(quest_id, player_id, vote):
         'members': [],
         'votes': [],
         'results': []
-      }}}
+      }], '$position': 0}}}
     )
 
   return flask.jsonify({'success': True})
