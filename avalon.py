@@ -192,7 +192,7 @@ def sanitize_quests(game):
   # mask in-progress voting and don't return player ids
   for quest in quests:
     if is_proposal_voting_complete(game, quest):
-      quest['votes'] = sorted([{'player_name': find_player(game, 'id', vote['player_id'])['name'],'vote': vote['vote']} for vote in quest['votes']], key = lambda vote: vote['player_name'])
+      quest['votes'] = sorted([{'player_name': find_player(game, 'id', vote['player_id'])['name'], 'vote': vote['vote']} for vote in quest['votes']], key = lambda vote: vote['player_name'])
     else:
       quest['votes'] = []
 
