@@ -68,14 +68,14 @@ def get_state(game_id, player_id):
   game = games.find_one({'id': game_id, 'players.id': player_id})
   if game is None:
     return flask.jsonify({'success': False})
-  player = find_player_by_id(game, player_id)
+  player = next(player for player in game['players'] if player['id'] == player_id)
   return flask.jsonify({
     'players': [player['name'] for player in game['players']],
     'roleList': sorted([player['role'] for player in game['players']]),
-    'questConfigurations': quest_configurations.get(num_players(game)),
+    'questConfigurations': quest_configurations.get(len(game['players'])),
     'myName': player['name'],
     'myRole': player['role'],
-    'playerHints': get_player_hints(game, player),
+    'knowledge': get_player_knowledge(game, player),
     'quests': sanitize_quests(game)
   })
 
@@ -106,7 +106,10 @@ def vote_for_proposal(quest_id, player_id, player_name, vote):
       'players': {'$elemMatch': {'id': player_id, 'name': player_name}},
       'quests': {'$elemMatch': {'id': quest_id, 'members': {'$ne': []}, 'votes.player': {'$ne': player_name}}}
     },
-    {'$push': {'quests.$[quest].votes': {'player': player_name, 'vote': vote}}, '$inc': {'quests.$[quest].remainingVotes': -1, 'quests.$[quest].voteStatus': vote}},
+    {
+      '$push': {'quests.$[quest].votes': {'player': player_name, 'vote': vote}},
+      '$inc': {'quests.$[quest].remainingVotes': -1, 'quests.$[quest].voteStatus': vote}
+    },
     array_filters = [{'quest.id': quest_id}],
     return_document = pymongo.collection.ReturnDocument.AFTER
   )
@@ -117,9 +120,8 @@ def vote_for_proposal(quest_id, player_id, player_name, vote):
   quest = next(quest for quest in game['quests'] if quest['id'] == quest_id)
   games.update_one(
     {'quests': {'$elemMatch': {'id': quest_id, 'remainingVotes': 0, 'voteStatus': {'$lte': 0}, 'attemptNumber': {'$lt': 5}}}},
-    {'$push': {'quests': create_quest(quest['questNumber'], quest['attemptNumber'] + 1, get_next_leader(game, quest), num_players(game))}}
+    {'$push': {'quests': create_quest(quest['roundNumber'], quest['attemptNumber'] + 1, get_next_leader(game, quest), len(game['players']))}}
   )
-
   return flask.jsonify({'success': True})
 
 @app.route('/api/quest/vote/<quest_id>/<player_id>/<player_name>/<vote>', methods=['POST'])
@@ -132,7 +134,10 @@ def vote_in_quest(quest_id, player_id, player_name, vote):
       'players': {'$elemMatch': {'id': player_id, 'name': player_name, 'role': {'$in': list(evil_characters if vote == -1 else role_knowledge.keys())}}},
       'quests': {'$elemMatch': {'id': quest_id, 'members': player_name, 'results.player': {'$ne': player_name}, 'remainingVotes': 0, 'voteStatus': {'$gt': 0}}}
     },
-    {'$push': {'quests.$[quest].results': {'player': player_name, 'vote': vote}}},
+    {
+      '$push': {'quests.$[quest].results': {'player': player_name, 'vote': vote}},
+      '$inc': {'quests.$[quest].remainingResults': -1, 'quests.$[quest].failures': 1 if vote < 0 else 0}
+    },
     array_filters = [{'quest.id': quest_id}],
     return_document = pymongo.collection.ReturnDocument.AFTER
   )
@@ -141,38 +146,32 @@ def vote_in_quest(quest_id, player_id, player_name, vote):
 
   # move on to next round if all results have been collected (or do nothing if game is over)
   quest = next(quest for quest in game['quests'] if quest['id'] == quest_id)
-  if is_quest_voting_complete(quest) and not is_game_over(game):
-    games.update_one(
-      {'quests.id': quest_id},
-      {'$push': {'quests': create_quest(quest['questNumber'] + 1, 1, get_next_leader(game, quest), num_players(game))}}
-    )
-
+  games.update_one(
+    {'quests': {'$elemMatch': {'id': quest_id, 'remainingResults': 0, 'roundNumber': {'$lt': 5}}}},
+    {'$push': {'quests': create_quest(quest['roundNumber'] + 1, 1, get_next_leader(game, quest), len(game['players']))}}
+  )
   return flask.jsonify({'success': True})
 
 def random_id():
-  return ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+  return ''.join(random.choices(string.ascii_letters + string.digits, k = 6))
 
-def create_quest(questNumber, attemptNumber, leader, num_players):
+def create_quest(roundNumber, attemptNumber, leader, num_players):
   return {
     'id': random_id(),
-    'questNumber': questNumber,
+    'roundNumber': roundNumber,
     'attemptNumber': attemptNumber,
-    'size': quest_configurations[num_players][questNumber - 1],
+    'size': quest_configurations[num_players][roundNumber - 1],
     'leader': leader,
     'members': [],
     'votes': [],
     'results': [],
     'remainingVotes': num_players,
-    'voteStatus': 0
+    'voteStatus': 0,
+    'remainingResults': quest_configurations[num_players][roundNumber - 1],
+    'failures': 0
   }
 
-def find_player_by_id(game, player_id):
-  return next(player for player in game['players'] if player['id'] == player_id)
-
-def num_players(game):
-  return len(game['players'])
-
-def get_player_hints(game, player):
+def get_player_knowledge(game, player):
   return [p['name'] for p in game['players'] if p['id'] != player['id'] and p['role'] in role_knowledge[player['role']]]
 
 def sanitize_quests(game):
@@ -180,23 +179,10 @@ def sanitize_quests(game):
   # mask in-progress voting and anonymize votes
   for quest in quests:
     quest['votes'] = sorted(quest['votes'], key = lambda vote: vote['player']) if quest['remainingVotes'] == 0 else []
-    quest['results'] = [result['vote'] for result in quest['results']] if is_quest_voting_complete(quest) else []
+    quest['results'] = [result['vote'] for result in quest['results']] if quest['remainingResults'] == 0 else []
     del quest['voteStatus']
+    del quest['failures']
   return quests
-
-def is_quest_voting_complete(quest):
-  return len(quest['results']) == quest['size']
-
-def is_game_over(game):
-  completed_quests = [quest for quest in game['quests'] if quest['results']]
-  num_successes = sum(did_quest_succeed(game, quest) for quest in completed_quests)
-  num_failures = len(completed_quests) - num_successes
-  return max(num_successesm, num_failures) > 2
-
-def did_quest_succeed(game, quest):
-  num_fails = sum(1 for result in quest['results'] if result['vote'] < 0 )
-  # in games with 7 or more people, round 4 requires at least two failures
-  return num_fails == 0 or (quest['questNumber'] == 4 and num_players(game) > 6 and num_fails == 1)
 
 def get_next_leader(game, quest):
   players = game['players']
