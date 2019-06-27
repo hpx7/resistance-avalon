@@ -181,21 +181,22 @@ def sanitize_quests(game):
   for quest in quests:
     quest['votes'] = sorted(quest['votes'], key = lambda vote: vote['player']) if quest['remainingVotes'] == 0 else []
     quest['results'] = [result['vote'] for result in quest['results']] if is_quest_voting_complete(quest) else []
+    del quest['voteStatus']
   return quests
 
 def is_quest_voting_complete(quest):
   return len(quest['results']) == quest['size']
 
 def is_game_over(game):
-  completed_quests = [quest for quest in game['quests'] if is_quest_voting_complete(quest)]
+  completed_quests = [quest for quest in game['quests'] if quest['results']]
   num_successes = sum(did_quest_succeed(game, quest) for quest in completed_quests)
   num_failures = len(completed_quests) - num_successes
-  return num_successes > 2 or num_failures > 2
+  return max(num_successesm, num_failures) > 2
 
 def did_quest_succeed(game, quest):
-  num_fails = len(quest['results']) - sum(result['vote'] for result in quest['results'])
+  num_fails = sum(1 for result in quest['results'] if result['vote'] < 0 )
   # in games with 7 or more people, round 4 requires at least two failures
-  return num_fails == 0 or quest['questNumber'] == 4 and num_players(game) > 6 and num_fails == 1
+  return num_fails == 0 or (quest['questNumber'] == 4 and num_players(game) > 6 and num_fails == 1)
 
 def get_next_leader(game, quest):
   players = game['players']
