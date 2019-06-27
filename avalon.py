@@ -57,7 +57,9 @@ def create_game():
       'leader': random.choice(players),
       'members': [],
       'votes': [],
-      'results': []
+      'results': [],
+      'remainingVotes': len(players),
+      'voteStatus': 0
     }]
   })
   return flask.jsonify({'gameId': game_id, 'success': True})
@@ -94,7 +96,10 @@ def propose_quest(quest_id, player_id):
     return flask.jsonify({'error': True})
 
   result = games.update_one(
-    {'quests.id': quest_id, 'quests.members': [], 'quests.leader.id': player_id, 'quests.size': len(proposed_members), 'players.name': {'$all': proposed_members}},
+    {
+      'players': {'$elemMatch': {'name': {'$all': proposed_members}}},
+      'quests': {'$elemMatch': {'id': quest_id, 'members': [], 'leader.id': player_id}}
+    },
     {'$set': {'quests.$[quest].members': proposed_members}},
     array_filters = [{'quest.id': quest_id}]
   )
@@ -102,9 +107,13 @@ def propose_quest(quest_id, player_id):
 
 @app.route('/api/proposal/vote/<quest_id>/<player_id>/<vote>', methods=['POST'])
 def vote_for_proposal(quest_id, player_id, vote):
+  vote = int(vote)
   game = games.find_one_and_update(
-    {'quests.id': quest_id, 'players.id': player_id, 'quests.members': {'$ne': []}, 'quests.votes.player_id': {'$ne': player_id}},
-    {'$push': {'quests.$[quest].votes': {'player_id': player_id, 'vote': int(vote)}}},
+    {
+      'players': {'$elemMatch': {'id': player_id}},
+      'quests': {'$elemMatch': {'id': quest_id, 'members': {'$ne': []}, 'votes.player_id': {'$ne': player_id}}}
+    },
+    {'$push': {'quests.$[quest].votes': {'player_id': player_id, 'vote': vote}}, '$inc': {'quests.$[quest].remainingVotes': -1, 'quests.$[quest].voteStatus': vote}},
     array_filters = [{'quest.id': quest_id}],
     return_document = pymongo.collection.ReturnDocument.AFTER
   )
@@ -113,10 +122,10 @@ def vote_for_proposal(quest_id, player_id, vote):
 
   # move to next leader if proposal was rejected
   quest = next(quest for quest in game['quests'] if quest['id'] == quest_id)
-  if is_proposal_voting_complete(game, quest) and not proposal_accepted(game, quest) and quest['attemptNumber'] < 5:
+  if is_proposal_voting_complete(quest) and not proposal_accepted(quest) and quest['attemptNumber'] < 5:
     games.update_one(
       {'quests.id': quest_id},
-      {'$push': {'quests': { '$each': [{
+      {'$push': {'quests': {
         'id': random_id(),
         'questNumber': quest['questNumber'],
         'attemptNumber': quest['attemptNumber'] + 1,
@@ -124,24 +133,23 @@ def vote_for_proposal(quest_id, player_id, vote):
         'leader': get_next_leader(game, quest),
         'members': [],
         'votes': [],
-        'results': []
-      }], '$position': 0}}}
+        'results': [],
+        'remainingVotes': num_players(game),
+        'voteStatus': 0
+      }}}
     )
 
   return flask.jsonify({'success': True})
 
 @app.route('/api/quest/vote/<quest_id>/<player_id>/<player_name>/<vote>', methods=['POST'])
 def vote_in_quest(quest_id, player_id, player_name, vote):
-  selector = {}
-  selector['quests.id'] = quest_id
-  selector['players'] = {'$elemMatch': {'id': player_id, 'name': player_name, 'role': {'$in': list(evil_characters if vote == '0' else role_knowledge.keys())}}}
-  selector['quests.members'] = player_name
-  selector['quests.results.player_id'] = {'$ne': player_id}
-  selector['$expr'] = {'$eq': [{'$size': {'$arrayElemAt': ['$quests.votes', 0]}}, {'$size': '$players'}]}
-
+  vote = int(vote)
   game = games.find_one_and_update(
-    selector,
-    {'$push': {'quests.$[quest].results': {'player_id': player_id, 'vote': int(vote)}}},
+    {
+      'players': {'$elemMatch': {'id': player_id, 'name': player_name, 'role': {'$in': list(evil_characters if vote == '0' else role_knowledge.keys())}}},
+      'quests': {'$elemMatch': {'id': quest_id, 'members': player_name, 'results.player_id': player_id, 'remaingVotes': 0, 'voteStatus': {'$gt': 0}}}
+    },
+    {'$push': {'quests.$[quest].results': {'player_id': player_id, 'vote': vote}}},
     array_filters = [{'quest.id': quest_id}],
     return_document = pymongo.collection.ReturnDocument.AFTER
   )
@@ -153,15 +161,18 @@ def vote_in_quest(quest_id, player_id, player_name, vote):
   if is_quest_voting_complete(quest) and not is_game_over(game):
     games.update_one(
       {'quests.id': quest_id},
-      {'$push': {'quests': { '$each': [{
+      {'$push': {'quests': {
+        'id': random_id(),
         'questNumber': quest['questNumber'] + 1,
         'attemptNumber': 1,
         'size': quest_configurations[num_players(game)][quest['questNumber']],
         'leader': get_next_leader(game, quest),
         'members': [],
         'votes': [],
-        'results': []
-      }], '$position': 0}}}
+        'results': [],
+        'remainingVotes': num_players(game),
+        'voteStatus': 0
+      }}}
     )
 
   return flask.jsonify({'success': True})
@@ -191,7 +202,7 @@ def sanitize_quests(game):
   quests = copy.deepcopy(game['quests'])
   # mask in-progress voting and don't return player ids
   for quest in quests:
-    if is_proposal_voting_complete(game, quest):
+    if is_proposal_voting_complete(quest):
       quest['votes'] = sorted([{'player_name': find_player(game, 'id', vote['player_id'])['name'], 'vote': vote['vote']} for vote in quest['votes']], key = lambda vote: vote['player_name'])
     else:
       quest['votes'] = []
@@ -204,14 +215,11 @@ def sanitize_quests(game):
     quest['leader'] = quest['leader']['name']
   return quests
 
-def proposal_accepted(game, quest):
-  return sum(vote['vote'] for vote in quest['votes']) * 2 > num_players(game)
+def proposal_accepted(quest):
+  return quest['voteStatus'] > 0
 
-def is_proposal_voting_complete(game, quest):
-  return len(quest['votes']) == len(game['players'])
-
-def is_valid_quest_vote(game, player, vote):
-  return vote or player['role'] in evil_characters
+def is_proposal_voting_complete(quest):
+  return quest['remainingVotes'] == 0
 
 def is_quest_voting_complete(quest):
   return len(quest['results']) == quest['size']
