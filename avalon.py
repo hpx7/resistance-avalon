@@ -89,7 +89,7 @@ def propose_quest(quest_id, player_id, player_name):
     {
       'players.name': {'$all': proposed_members},
       'players': {'$elemMatch': {'id': player_id, 'name': player_name}},
-      'quests': {'$elemMatch': {'id': quest_id, 'members': [], 'leader': player_name}}
+      'quests': {'$elemMatch': {'id': quest_id, 'members': [], 'leader': player_name, 'size': len(proposed_members)}}
     },
     {'$set': {'quests.$[quest].members': proposed_members}},
     array_filters = [{'quest.id': quest_id}]
