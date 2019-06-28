@@ -212,7 +212,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
             },
             history
         } = this.props;
-        if (this.hasValue(gameId) && this.hasValue(userName)) {
+        if (!this.hasValue(gameId) && this.hasValue(userName)) {
             this.services.gameService.createGame(userName).then(({ gameId, userId }) => {
                 history.push(new GamePath(gameId, userId).getPathName());
             })

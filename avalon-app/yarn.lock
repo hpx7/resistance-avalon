@@ -2800,6 +2800,11 @@ confusing-browser-globals@^1.0.7:
   resolved "https://registry.yarnpkg.com/confusing-browser-globals/-/confusing-browser-globals-1.0.7.tgz#5ae852bd541a910e7ffb2dbb864a2d21a36ad29b"
   integrity sha512-cgHI1azax5ATrZ8rJ+ODDML9Fvu67PimB6aNxBrc/QwSaDaM9eTfIEUHx3bBLJJ82ioSb+/5zfsMCCEJax3ByQ==
 
+conjure-client@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/conjure-client/-/conjure-client-1.5.0.tgz#a80c5863dc9027cb86c52789816d10f6d2fc4c43"
+  integrity sha512-1ngYpVz7wK8qprHoLtrucJAXdmAPITAyc4XJhJ9zYlas55zV3zoU5vv6OumhlaeRs09IWLBbbH31lX0RSKKR6A==
+
 connect-history-api-fallback@^1.3.0:
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/connect-history-api-fallback/-/connect-history-api-fallback-1.6.0.tgz#8b32089359308d111115d81cad3fceab888f97bc"
