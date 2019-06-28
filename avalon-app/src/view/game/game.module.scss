@@ -1,0 +1,22 @@
+@import "~@blueprintjs/core/lib/scss/variables";
+
+.game {
+    text-align: center;
+}
+
+.body {
+    background-image: url(../../resources/background.svg);
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.form {
+    width: 30 * $pt-grid-size;
+}
