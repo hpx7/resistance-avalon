@@ -180,6 +180,7 @@ def sanitize_quests(game):
   for quest in quests:
     quest['votes'] = sorted(quest['votes'], key = lambda vote: vote['player']) if quest['remainingVotes'] == 0 else []
     quest['results'] = [result['vote'] for result in quest['results']] if quest['remainingResults'] == 0 else []
+    quest['status'] = get_quest_status(quest)
     del quest['voteStatus']
     del quest['failures']
   return quests
@@ -188,3 +189,14 @@ def get_next_leader(game, quest):
   players = game['players']
   idx = next(i for i in range(len(players)) if players[i]['name'] == quest['leader'])
   return players[(idx + 1) % len(players)]['name']
+
+def get_quest_status(quest):
+  if not quest['members']:
+    return 'proposing_quest'
+  if quest['remainingVotes'] > 0:
+    return 'voting_for_proposal'
+  if quest['voteStatus'] <= 0:
+    return 'proposal_rejected'
+  if quest['remainingResults'] > 0:
+    return 'voting_in_quest'
+  return 'passed' if quest['failures'] == 0 or (quest['roundNumber'] == 4 and len(game['players']) > 6 and quest['failures'] == 1) else 'failed'
