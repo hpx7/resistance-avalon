@@ -4,6 +4,10 @@
     text-align: center;
 }
 
+.fadeCollapse {
+    opacity: 0;
+}
+
 .body {
     background-image: url(../../resources/background.svg);
     background-size: cover;
@@ -15,13 +19,20 @@
     align-items: center;
     justify-content: center;
     color: white;
+
+    :global(.bp3-collapse) {
+        height: 0;
+        opacity: 1;
+        overflow-y: hidden;
+        transition: height 400ms ease, opacity 400ms ease;
+    }
 }
 
 .form {
     width: 30 * $pt-grid-size;
 }
 
-.join {
+.actionButton {
     display: flex;
 }
 

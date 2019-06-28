@@ -1,11 +1,18 @@
-import { IApplicationState } from "./types";
+import { IApplicationState, HomeAction } from "./types";
 
 export const INITIAL_APPLICATION_STATE: IApplicationState = {
     gameState: {
         game: undefined,
     },
     homeState: {
-        userName: undefined,
-        gameId: undefined,
+        homeAction: HomeAction.JOIN_GAME,
+        userName: {
+            value: "",
+            hasPreviouslyBeenSet: false,
+        },
+        gameId: {
+            value: "",
+            hasPreviouslyBeenSet: false,
+        }
     }
 }
