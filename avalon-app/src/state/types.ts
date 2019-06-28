@@ -1,10 +1,13 @@
+import { IAsyncLoaded } from "../common/redoodle";
+import { IGameService } from "../api";
+
 export interface IApplicationState {
     gameState: IGameState;
     homeState: IHomeState;
 }
 
 export interface IGameState {
-    game: IGame | undefined;
+    game: IAsyncLoaded<IGame, string>;
 }
 
 export enum HomeAction {
@@ -42,3 +45,17 @@ export interface IGame {
     questAttempts: IQuestAttempt[];
     roleList: string[];
 }
+
+export interface ICreatedGame {
+    gameId: string;
+    userId: string;
+}
+
+export interface IEndpoints {
+    gameServiceApi: string | undefined;
+}
+
+export interface IApplicationApi {
+    gameService: IGameService;
+}
+

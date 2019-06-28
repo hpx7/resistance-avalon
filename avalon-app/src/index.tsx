@@ -10,18 +10,23 @@ import { applyMiddleware, createStore } from "redux";
 import { composeWithDevTools } from "redux-devtools-extension";
 import { INITIAL_APPLICATION_STATE, appReducer, IApplicationState } from "./state";
 import { ContextProvider } from "./common/contextProvider";
-import { StateService } from "./service/state";
+import { GameService, StateService } from "./service";
+import { createApi } from "./common/createApi";
 
 const middlewareEnhancer = composeWithDevTools(applyMiddleware(loggingMiddleware()));
 const createStoreWithMiddleware = middlewareEnhancer<IApplicationState>(createStore);
 const store = createStoreWithMiddleware(appReducer, INITIAL_APPLICATION_STATE);
 
+const api = createApi({ gameServiceApi: "mock" });
+
 const stateService = new StateService(store.dispatch);
+const gameService = new GameService(store.dispatch, api.gameService);
 
 ReactDOM.render(
     <Provider store={store}>
         <ContextProvider
             stateService={stateService}
+            gameService={gameService}
         >
             <BrowserRouter basename="/">
                 <App />

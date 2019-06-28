@@ -9,7 +9,6 @@ import { RouteComponentProps, withRouter } from "react-router";
 import { handleStringChange } from "../../common/handleStringChange";
 import { GamePath } from "../../paths/game";
 import classNames from "classnames";
-import { generateGameId } from "../../common/gameId";
 
 type HomeProps = RouteComponentProps<any> & IHomeState;
 
@@ -33,6 +32,10 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
         REQUIRED_TEXT: "(required)"
     }
     private services = getServices(this.context);
+
+    public componentDidMount() {
+        this.services.stateService.clearGame();
+    }
 
     public render() {
         const isJoinGameAction = this.shouldShowActionMatch(HomeAction.JOIN_GAME);
@@ -183,16 +186,36 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
     }
 
     private tryToJoinGame = () => {
-        const { gameId, userName, history } = this.props;
-        if (this.hasValue(gameId.value) && this.hasValue(userName.value)) {
-            history.push(new GamePath(gameId.value).getPathName())
+        const {
+            gameId: {
+                value: gameId
+            },
+            userName: {
+                value: userName
+            },
+            history
+        } = this.props;
+        if (this.hasValue(gameId) && this.hasValue(userName)) {
+            this.services.gameService.joinGame(gameId, userName).then(userId => {
+                history.push(new GamePath(gameId, userId).getPathName());
+            })
         }
     }
 
     private tryToCreateGame = () => {
-        const { userName, gameId, history } = this.props;
-        if (this.hasValue(userName.value) && !this.hasValue(gameId.value)) {
-            history.push(new GamePath(generateGameId()).getPathName())
+        const {
+            gameId: {
+                value: gameId
+            },
+            userName: {
+                value: userName
+            },
+            history
+        } = this.props;
+        if (this.hasValue(gameId) && this.hasValue(userName)) {
+            this.services.gameService.createGame(userName).then(({ gameId, userId }) => {
+                history.push(new GamePath(gameId, userId).getPathName());
+            })
         }
     }
 

@@ -1,18 +1,20 @@
 import { combineReducers, reduceCompoundActions, TypedReducer, Reducer } from "redoodle";
 import { IApplicationState } from "../state/index";
-import { SET_GAME, CLEAR_GAME, SET_USER_NAME, SET_GAME_ID, SET_HOME_ACTION } from "./actions";
-import { IGameState, IHomeState } from "./types";
+import { SetGameId, SetHomeAction, SetUserName, SetGame } from "./actions";
+import { IGameState, IHomeState, IGame } from "./types";
+import { TypedAsyncLoadedReducer } from "../common/redoodle";
 
-const gameStateReducer = TypedReducer.builder<IGameState>()
-    .withHandler(SET_GAME.TYPE, (state, game) => {
-        const {game: prevGame} = state;
-        return prevGame == null || game.id !== prevGame.id ? { game } : state;
-    })
-    .withHandler(CLEAR_GAME.TYPE, () => ({ game: undefined}))
+const gameReducer = TypedAsyncLoadedReducer.builder<IGame, string>()
+    .withAsyncLoadHandler(SetGame, game => game, error => error)
     .build();
 
+const gameStateReducer = combineReducers<IGameState>({
+    game: gameReducer,
+});
+
+
 const homeStateReducer = TypedReducer.builder<IHomeState>()
-    .withHandler(SET_USER_NAME.TYPE, (state, userName) => {
+    .withHandler(SetUserName.TYPE, (state, userName) => {
         const { hasPreviouslyBeenSet, value } = state.userName;
         return {
             ...state,
@@ -22,7 +24,7 @@ const homeStateReducer = TypedReducer.builder<IHomeState>()
             }
         };
     })
-    .withHandler(SET_GAME_ID.TYPE, (state, gameId) => {
+    .withHandler(SetGameId.TYPE, (state, gameId) => {
         const { hasPreviouslyBeenSet, value } = state.gameId;
         return {
             ...state,
@@ -32,7 +34,7 @@ const homeStateReducer = TypedReducer.builder<IHomeState>()
             }
         };
     })
-    .withHandler(SET_HOME_ACTION.TYPE, (state, homeAction) => {
+    .withHandler(SetHomeAction.TYPE, (state, homeAction) => {
         if (state.homeAction === homeAction) {
             return state;
         } else {
