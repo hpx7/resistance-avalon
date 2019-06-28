@@ -38,30 +38,36 @@ quest_configurations = {
 
 @app.route('/api/create', methods=['POST'])
 def create_game():
-  role_list = flask.request.json.get('roleList')
-  player_order = flask.request.json['playerOrder']
-  if role_list is None or player_order is None or len(role_list) != len(player_order) or len(role_list) not in quest_configurations:
-    return flask.jsonify({'success': False})
-
   game_id = random_id()
-  shuffled_roles = random.sample(role_list, len(role_list))
-  players = [{'id': None, 'name': name, 'role': role} for name, role in zip(player_order, shuffled_roles)]
-  games.insert_one({
-    'id': game_id,
-    'players': players,
-    'quests': [create_quest(1, 1, random.choice(player_order), len(players))]
-  })
+  games.insert_one({'id': game_id, 'players': [], 'quests': []})
   return flask.jsonify({'gameId': game_id, 'success': True})
 
 @app.route('/api/join/<game_id>/<player_name>', methods=['POST'])
 def join_game(game_id, player_name):
   player_id = random_id()
   result = games.update_one(
-    {'id': game_id, 'players': {'$elemMatch': {'name': player_name, 'id': None}}},
-    {'$set': {'players.$[player].id': player_id}},
-    array_filters = [{'player.name': player_name}]
+    {'id': game_id, 'players.name': {'$ne': player_name}, 'quests': []},
+    {'$push': {'players': {'id': player_id, 'name': player_name}}}
   )
   return flask.jsonify({'playerId': player_id, 'success': True}) if result.modified_count else flask.jsonify({'success': False})
+
+@app.route('/api/start/<game_id>/<player_id>', methods=['POST'])
+def start_game(game_id, player_id):
+  role_list = flask.request.json.get('roleList')
+  player_order = flask.request.json['playerOrder']
+  if role_list is None or player_order is None or len(role_list) != len(player_order) or len(role_list) not in quest_configurations:
+    return flask.jsonify({'success': False})
+
+  shuffled_roles = random.sample(role_list, len(role_list))
+  result = games.update_one(
+    {'id': game_id, 'players.id': player_id, 'players.name': {'$all': player_order}, 'quests': []},
+    {
+      '$set': {'players.$[{}].role'.format(name): role for name, role in zip(player_order, shuffled_roles)},
+      '$push': {'quests': create_quest(1, 1, random.choice(player_order), len(player_order))}
+    },
+    array_filters = [{'{}.name'.format(name): name} for name in player_order]
+  )
+  return flask.jsonify({'success': bool(result.modified_count)})
 
 @app.route('/api/state/<game_id>/<player_id>')
 def get_state(game_id, player_id):
