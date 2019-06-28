@@ -1,8 +1,9 @@
 import { IApplicationState, HomeAction } from "./types";
+import { asyncNotStartedLoading } from "../common/redoodle";
 
 export const INITIAL_APPLICATION_STATE: IApplicationState = {
     gameState: {
-        game: undefined,
+        game: asyncNotStartedLoading(),
     },
     homeState: {
         homeAction: HomeAction.JOIN_GAME,

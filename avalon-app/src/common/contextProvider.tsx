@@ -3,10 +3,11 @@ import * as React from "react";
 
 import * as PropTypes from "prop-types";
 import { RouterChildContext } from "react-router";
-import { StateService } from "../service/state";
+import { GameService, StateService } from "../service";
 
 export interface IServiceContext {
     stateService: StateService;
+    gameService: GameService;
 }
 
 export interface IContextType {
