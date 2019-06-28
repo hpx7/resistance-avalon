@@ -7,9 +7,20 @@ export interface IGameState {
     game: IGame | undefined;
 }
 
+export enum HomeAction {
+    JOIN_GAME = "join",
+    CREATE_GAME = "create",
+}
+
+export interface ISettableValue {
+    value: string;
+    hasPreviouslyBeenSet: boolean;
+}
+
 export interface IHomeState {
-    userName: string | undefined;
-    gameId: string | undefined;
+    homeAction: HomeAction;
+    userName: ISettableValue;
+    gameId: ISettableValue;
 }
 
 export interface IQuestAttempt {
