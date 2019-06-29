@@ -6,6 +6,17 @@ export interface IApplicationState {
     homeState: IHomeState;
 }
 
+export enum Role {
+    MERLIN = "merlin",
+    MORGANA = "morgana",
+    PERCIVAL = "percival",
+    MORDRED = "mordred",
+    OBERON = "oberon",
+    ASSASSIN = "assassin",
+    LOYAL_SERVANT = "loyal servant",
+    MINION = "minion",
+}
+
 export enum GameAction {
     VIEW_PLAYERS = "view_players",
     VIEW_QUESTS = "view_quests",
@@ -60,7 +71,7 @@ export interface IGame {
     id: string;
     creator: string;
     myName: string;
-    myRole: string;
+    myRole: Role;
     knowledge: string[];
     players: string[];
     questConfigurations: number[];

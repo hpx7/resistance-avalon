@@ -1,5 +1,5 @@
 import React, { CSSProperties } from "react";
-import { Card, Classes, Elevation, Navbar, NavbarGroup, NavbarHeading, Button, NavbarDivider } from "@blueprintjs/core";
+import { Card, Classes, Elevation, Navbar, NavbarGroup, NavbarHeading, Button, NavbarDivider, Tooltip, Icon, Intent } from "@blueprintjs/core";
 import styles from "./game.module.scss";
 import { ContextType, getServices } from "../../common/contextProvider";
 import classNames from "classnames";
@@ -7,10 +7,12 @@ import { IconNames } from "@blueprintjs/icons";
 import { IApplicationState, IGameState } from "../../state";
 import { connect } from "react-redux";
 import { History } from "history";
-import { GameAction } from "../../state/types";
+import { GameAction, IGame, Role } from "../../state/types";
 import { HomePath } from "../../paths/home";
 import { isReady } from "../../common/redoodle";
 import { times, constant, random } from "lodash-es";
+import { assertNever } from "../../common/assertNever";
+import { Player } from "./player";
 
 interface IOwnProps {
     history: History;
@@ -76,9 +78,9 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         if (!isReady(game)) {
             return this.renderGameSkeleton();
         } else if (gameAction === GameAction.VIEW_PLAYERS) {
-            return this.renderPlayers();
+            return this.renderPlayers(game.value);
         } else {
-            return this.renderQuests();
+            return this.renderQuests(game.value);
         }
     }
 
@@ -90,11 +92,13 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         });
     }
 
-    private renderPlayers() {
-        return "View players"
+    private renderPlayers(game: IGame) {
+        return game.players.map(player => {
+            return <Player player={player} game={game} showKnowledge={true} />
+        })
     }
 
-    private renderQuests() {
+    private renderQuests(game: IGame) {
         return "Let us go on a quest"
     }
 

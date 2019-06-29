@@ -13,18 +13,18 @@ games = pymongo.MongoClient().db.games
 
 # which roles have knowledge of which other roles
 role_knowledge = {
-  'merlin': ['morgana', 'assasin', 'minion'],
+  'merlin': ['morgana', 'assassin', 'minion'],
   'percival': ['merlin', 'morgana'],
   'loyal servant': [],
-  'morgana': ['mordred', 'assasin', 'minion'],
-  'mordred': ['morgana', 'assasin', 'minion'],
+  'morgana': ['mordred', 'assassin', 'minion'],
+  'mordred': ['morgana', 'assassin', 'minion'],
   'oberon': [],
-  'assasin': ['morgana', 'mordred', 'minion'],
-  'minion': ['morgana', 'mordred', 'assasin', 'minion']
+  'assassin': ['morgana', 'mordred', 'minion'],
+  'minion': ['morgana', 'mordred', 'assassin', 'minion']
 }
 
 # which characters are evil
-evil_characters = {'morgana', 'mordred', 'oberon', 'assasin', 'minion'}
+evil_characters = {'morgana', 'mordred', 'oberon', 'assassin', 'minion'}
 
 # how many people go on quests per round based on the number of players
 quest_configurations = {

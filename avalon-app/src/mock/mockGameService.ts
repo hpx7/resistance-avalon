@@ -1,5 +1,6 @@
 import { IGameService } from "../api/game";
 import { ICreatedGame, IGame } from "../state";
+import { Role } from "../state/types";
 
 const TIMEOUT_IN_MS = 2000;
 
@@ -42,12 +43,12 @@ export class MockGameService implements IGameService {
     }
 
     public getGameState(gameId: string, userId: string): Promise<IGame> {
-        const game = {
+        const game: IGame = {
             id: gameId,
             creator: "Admin",
             myName: "Adhish",
-            myRole: "Loyal servant of Arthur",
-            knowledge: [],
+            myRole: Role.PERCIVAL,
+            knowledge: ["Jack", "Kate"],
             players: Array.from(this.userMap.keys()),
             questConfigurations: [],
             questAttempts: [],
