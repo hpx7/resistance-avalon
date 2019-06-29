@@ -5,6 +5,7 @@ import { Home } from "../home/home";
 import { GamePath, HomePath } from "../../paths";
 import { Game } from "../game/game";
 import { NotFound } from "../notFound/notFound";
+import { IGamePathParams } from "../../paths/game";
 
 class ConnectedApp extends React.PureComponent<RouteComponentProps<any>> {
     public render() {
@@ -22,9 +23,13 @@ class ConnectedApp extends React.PureComponent<RouteComponentProps<any>> {
 
     private renderRootRedirect = () => <PathRedirect to={new HomePath()} />;
 
-    private renderHome = () => <Home />;
+    private renderHome = ({ history }: RouteComponentProps) => <Home history={history} />;
 
-    private renderGame = () => <Game />;
+    private renderGame = (routeProps: RouteComponentProps<IGamePathParams>) => {
+        const { history, match } = routeProps;
+        const { gameId, userId } = match.params;
+        return <Game gameId={gameId} userId={userId} history={history}/>;
+    }
 
     private renderDefault = () => <NotFound />;
 }

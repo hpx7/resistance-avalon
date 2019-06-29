@@ -1,7 +1,14 @@
 import { Dispatch } from "redux";
-import { SetUserName, SetGameId, SetHomeAction, SetGame } from "../state/actions";
-import { IApplicationState } from "../state";
-import { HomeAction } from "../state/types";
+import {
+    SetGameAction,
+    HomeAction,
+    GameAction,
+    IApplicationState,
+    SetUserName,
+    SetGameId,
+    SetHomeAction,
+    SetGame,
+} from "../state";
 
 export class StateService {
     constructor(private dispatch: Dispatch<IApplicationState>) {}
@@ -19,6 +26,10 @@ export class StateService {
     }
 
     public setHomeAction(homeAction: HomeAction) {
-        this.dispatch(SetHomeAction.create(homeAction))
+        this.dispatch(SetHomeAction.create(homeAction));
+    }
+
+    public setGameAction(gameAction: GameAction) {
+        this.dispatch(SetGameAction.create(gameAction));
     }
 }

@@ -5,12 +5,16 @@ import { IHomeState } from "../../state";
 import { IApplicationState, HomeAction } from "../../state/types";
 import { connect } from "react-redux";
 import { ContextType, getServices } from "../../common/contextProvider";
-import { RouteComponentProps, withRouter } from "react-router";
 import { handleStringChange } from "../../common/handleStringChange";
 import { GamePath } from "../../paths/game";
 import classNames from "classnames";
+import { History } from "history";
 
-type HomeProps = RouteComponentProps<any> & IHomeState;
+interface IOwnProps {
+    history: History;
+}
+
+type HomeProps = IOwnProps & IHomeState;
 
 class UnconnectedHome extends React.PureComponent<HomeProps> {
     public static contextTypes = ContextType;
@@ -41,9 +45,9 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
         const isJoinGameAction = this.shouldShowActionMatch(HomeAction.JOIN_GAME);
         const isCreateGameAction = this.shouldShowActionMatch(HomeAction.CREATE_GAME);
         return (
-            <div className={styles.home}>
+            <div className={classNames(styles.home, Classes.DARK)}>
                 <div className={styles.body}>
-                    <Card elevation={Elevation.THREE} className={Classes.DARK}>
+                    <Card elevation={Elevation.THREE}>
                         <Collapse
                             className={classNames({[styles.fadeCollapse]: isJoinGameAction})}
                             transitionDuration={400}
@@ -196,8 +200,10 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
             history
         } = this.props;
         if (this.hasValue(gameId) && this.hasValue(userName)) {
-            this.services.gameService.joinGame(gameId, userName).then(userId => {
-                history.push(new GamePath(gameId, userId).getPathName());
+            this.services.gameService.joinGame(gameId, userName).then(maybeUserId => {
+                if (maybeUserId != null) {
+                    history.push(new GamePath(gameId, maybeUserId).getPathName());
+                }
             })
         }
     }
@@ -213,8 +219,11 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
             history
         } = this.props;
         if (!this.hasValue(gameId) && this.hasValue(userName)) {
-            this.services.gameService.createGame(userName).then(({ gameId, userId }) => {
-                history.push(new GamePath(gameId, userId).getPathName());
+            this.services.gameService.createGame(userName).then(maybeCreateGame => {
+                if (maybeCreateGame != null) {
+                    const { gameId, userId } = maybeCreateGame;
+                    history.push(new GamePath(gameId, userId).getPathName());
+                }
             })
         }
     }
@@ -230,4 +239,4 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
 
 const mapStateToProps = (appState: IApplicationState): IHomeState => appState.homeState;
 
-export const Home = connect(mapStateToProps)(withRouter(UnconnectedHome));
+export const Home = connect(mapStateToProps)(UnconnectedHome);

@@ -6,8 +6,14 @@ export interface IApplicationState {
     homeState: IHomeState;
 }
 
+export enum GameAction {
+    VIEW_PLAYERS = "view_players",
+    VIEW_QUESTS = "view_quests",
+}
+
 export interface IGameState {
     game: IAsyncLoaded<IGame, string>;
+    gameAction: GameAction;
 }
 
 export enum HomeAction {
@@ -31,7 +37,17 @@ export interface IHomeState {
     gameId: ISettableValue;
 }
 
+export enum QuestAttemptStatus {
+    PENDING_PROPOSAL = "pending_proposal",
+    PENDING_PROPOSAL_VOTES  = "pending_proposal_votes",
+    PROPOSAL_REJECTED = "proposal_rejected",
+    PENDING_QUEST_RESULTS = "pending_quest_results",
+    PASSED = "passed",
+    FAILED = "failed"
+}
+
 export interface IQuestAttempt {
+    status: QuestAttemptStatus;
     attemptNumber: number;
     leader: string;
     members: string[];
@@ -42,6 +58,7 @@ export interface IQuestAttempt {
 
 export interface IGame {
     id: string;
+    creator: string;
     myName: string;
     myRole: string;
     knowledge: string[];
@@ -63,4 +80,3 @@ export interface IEndpoints {
 export interface IApplicationApi {
     gameService: IGameService;
 }
-

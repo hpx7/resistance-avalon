@@ -12,8 +12,9 @@ import { INITIAL_APPLICATION_STATE, appReducer, IApplicationState } from "./stat
 import { ContextProvider } from "./common/contextProvider";
 import { GameService, StateService } from "./service";
 import { createApi } from "./common/createApi";
+import { toasterMiddleware } from "./common/toast";
 
-const middlewareEnhancer = composeWithDevTools(applyMiddleware(loggingMiddleware()));
+const middlewareEnhancer = composeWithDevTools(applyMiddleware(loggingMiddleware(), toasterMiddleware()));
 const createStoreWithMiddleware = middlewareEnhancer<IApplicationState>(createStore);
 const store = createStoreWithMiddleware(appReducer, INITIAL_APPLICATION_STATE);
 

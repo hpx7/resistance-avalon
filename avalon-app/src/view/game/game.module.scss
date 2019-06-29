@@ -1,7 +1,17 @@
 @import "~@blueprintjs/core/lib/scss/variables";
 
+$nav-bar-height: 5 * $pt-grid-size;
+$logo-size: 3 * $pt-grid-size;
+
 .game {
     text-align: center;
+}
+
+.logo {
+    background-image: url(../../resources/logo.svg);
+    height: $logo-size;
+    width: $logo-size;
+    background-size: cover;
 }
 
 .body {
@@ -10,13 +20,26 @@
     background-attachment: fixed;
     background-position: center center;
     min-height: 100vh;
+    flex-direction: column;
+    color: white;
+}
+
+.navbar {
+    height: $nav-bar-height;
+}
+
+.content {
+    height: calc(100vh - #{$nav-bar-height});
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: white;
 }
 
-.form {
+.card {
     width: 30 * $pt-grid-size;
+}
+
+.skeletonRow:not(:last-child) {
+    margin-bottom: $pt-grid-size;
 }
