@@ -24,7 +24,7 @@ role_knowledge = {
 }
 
 # which characters are evil
-evil_characters = {'morgana', 'mordred', 'oberon', 'assassin', 'minion'}
+evil_roles = {'morgana', 'mordred', 'oberon', 'assassin', 'minion'}
 
 # how many people go on quests per round based on the number of players
 quest_configurations = {
@@ -77,7 +77,7 @@ def get_state(game_id, player_id):
   player = next(player for player in game['players'] if player['id'] == player_id)
   return flask.jsonify({
     'players': extract('name', game['players']),
-    'roleList': sorted(extract('role', game['players'])),
+    'roles': {role: role not in evil_roles for role in extract('role', game['players'])},
     'questConfigurations': quest_configurations.get(len(game['players'])),
     'myName': player['name'],
     'myRole': player['role'],
@@ -137,7 +137,7 @@ def vote_in_quest(quest_id, player_id, player_name, vote):
   vote = int(vote)
   game = games.find_one_and_update(
     {
-      'players': {'$elemMatch': {'id': player_id, 'name': player_name, 'role': {'$in': list(evil_characters if vote == -1 else role_knowledge.keys())}}},
+      'players': {'$elemMatch': {'id': player_id, 'name': player_name, 'role': {'$in': list(evil_roles if vote == -1 else role_knowledge.keys())}}},
       'quests': {'$elemMatch': {'id': quest_id, 'members': player_name, 'results.player': {'$ne': player_name}, 'remainingVotes': 0, 'voteStatus': {'$gt': 0}}}
     },
     {
@@ -182,7 +182,10 @@ def create_quest(roundNumber, attemptNumber, leader, num_players):
 
 def get_player_knowledge(game, player):
   known_players = [p for p in game['players'] if p['id'] != player['id'] and p['role'] in role_knowledge.get(player['role'], [])]
-  return {'players': extract('name', known_players), 'roles': sorted(extract('role', known_players))}
+  return {
+    'players': extract('name', known_players),
+    'roles': {role: role not in evil_roles for role in extract('role', known_players)}
+  }
 
 def sanitize_quests(game):
   quests = copy.deepcopy(game['quests'])
