@@ -11,33 +11,44 @@ interface IProps {
     player: string;
     game: IGame;
     showKnowledge: boolean;
+    showMyself: boolean;
 }
 
 export class Player extends React.PureComponent<IProps> {
+    public static defaultProps: Partial<IProps> = {
+        showKnowledge: true,
+        showMyself: true,
+    }
     private static STRINGS = {
         BAD_GUYS_TEXT: "This person is definitely one of the minions of Mordred.",
         PERCIVAL_TEXT: "This person is either Merlin or Morgana."
     }
 
     public render() {
+        console.log("swag");
         const {
             game: {
                 knowledge, myRole, myName
             },
             player,
             showKnowledge,
+            showMyself,
         } = this.props;
         const knownPlayers = new Set<string>(knowledge);
         const status = this.renderStatusIcon(myRole);
         const content = [
             <div key="player-name">{player}</div>,
-            (player === myName)
+            (showMyself && player === myName)
                 ? <div key="your-role" className={styles.you}>(You are {capitalize(myRole)})</div>
                 : undefined,
         ].filter(isNotNullish);
         return (
             <div className={styles.player}>
-                <div>{content.map(elem => <div className={styles.playerElement}>{elem}</div>)}</div>
+                <div className={styles.playerMainContent}>
+                    {content.map((elem, idx) => {
+                        return <div key={`player-${idx}`} className={styles.playerElement}>{elem}</div>
+                    })
+                }</div>
                 {showKnowledge && knownPlayers.has(player) ? status : undefined}
             </div>
         )
@@ -51,15 +62,17 @@ export class Player extends React.PureComponent<IProps> {
             case Role.MINION:
             case Role.MORDRED:
             case Role.MERLIN:
+                const merlinContent = <div className={styles.playerStatusTooltip}>{STRINGS.BAD_GUYS_TEXT}</div>;
                 return (
-                    <Popover content={<div>{STRINGS.BAD_GUYS_TEXT}</div>}>
-                        <Icon iconSize={12} icon={IconNames.FULL_CIRCLE} intent={Intent.DANGER} />
+                    <Popover content={merlinContent}>
+                        <Icon iconSize={12} icon={IconNames.THUMBS_UP} intent={Intent.DANGER} />
                     </Popover>
                 )
             case Role.PERCIVAL:
+                    const percivalContent = <div className={styles.playerStatusTooltip}>{STRINGS.PERCIVAL_TEXT}</div>;
                     return (
-                        <Popover content={<div>{STRINGS.PERCIVAL_TEXT}</div>}>
-                            <Icon iconSize={12} icon={IconNames.FULL_CIRCLE} intent={Intent.WARNING} />
+                        <Popover content={percivalContent}>
+                            <Icon iconSize={12} icon={IconNames.THUMBS_UP} intent={Intent.WARNING} />
                         </Popover>
                     )
             case Role.OBERON:

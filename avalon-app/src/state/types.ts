@@ -76,7 +76,7 @@ export interface IGame {
     players: string[];
     questConfigurations: number[];
     questAttempts: IQuestAttempt[];
-    roleList: string[];
+    roleList: Role[];
 }
 
 export interface ICreatedGame {

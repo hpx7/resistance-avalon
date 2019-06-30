@@ -10,6 +10,11 @@
         border-bottom: 1px solid $pt-dark-divider-white;
     }
 
+    .playerMainContent {
+        display: flex;
+        align-items: center;
+    }
+
     .playerElement:not(:last-child) {
         margin-right: 5px;
     }
@@ -21,4 +26,8 @@
     .hideStatus {
         opacity: 0;
     }
+}
+
+.playerStatusTooltip {
+    padding: $pt-grid-size / 2 $pt-grid-size;
 }

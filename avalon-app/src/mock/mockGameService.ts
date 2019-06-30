@@ -1,6 +1,6 @@
 import { IGameService } from "../api/game";
 import { ICreatedGame, IGame } from "../state";
-import { Role } from "../state/types";
+import { Role, QuestAttemptStatus } from "../state/types";
 
 const TIMEOUT_IN_MS = 2000;
 
@@ -18,12 +18,22 @@ export class MockGameService implements IGameService {
 
         const jackId = generateId();
         const kateId = generateId();
+        const harshId = generateId();
+        const adhishId = "y9uwsu";
 
         this.userMap.set("Jack", jackId);
         this.userReverseMap.set(jackId, "Jack");
 
         this.userMap.set("Kate", kateId);
         this.userReverseMap.set(kateId, "Kate");
+
+        this.userMap.set("Harsh", harshId);
+        this.userReverseMap.set(harshId, "Harsh");
+
+        this.userMap.set("Adhish", adhishId);
+        this.userReverseMap.set(adhishId, "Adhish");
+
+        this.gameOwnerMap.set("eb2vck", adhishId);
     }
 
     public createGame(userName: string): Promise<ICreatedGame> {
@@ -47,12 +57,64 @@ export class MockGameService implements IGameService {
             id: gameId,
             creator: "Admin",
             myName: "Adhish",
-            myRole: Role.PERCIVAL,
+            myRole: Role.MORDRED,
             knowledge: ["Jack", "Kate"],
             players: Array.from(this.userMap.keys()),
-            questConfigurations: [],
-            questAttempts: [],
-            roleList: [],
+            questConfigurations: [3, 4, 4, 5, 5],
+            questAttempts: [
+                {
+                    status: QuestAttemptStatus.FAILED,
+                    attemptNumber: 1,
+                    leader: "Adhish",
+                    members: [],
+                    questNumber: 1,
+                    results: [],
+                    votes: new Map<string, boolean>(),
+                },
+                {
+                    status: QuestAttemptStatus.PROPOSAL_REJECTED,
+                    attemptNumber: 1,
+                    leader: "Adhish",
+                    members: [],
+                    questNumber: 2,
+                    results: [],
+                    votes: new Map<string, boolean>(),
+                },
+                {
+                    status: QuestAttemptStatus.PROPOSAL_REJECTED,
+                    attemptNumber: 2,
+                    leader: "Adhish",
+                    members: [],
+                    questNumber: 2,
+                    results: [],
+                    votes: new Map<string, boolean>(),
+                },
+                {
+                    status: QuestAttemptStatus.PASSED,
+                    attemptNumber: 3,
+                    leader: "Adhish",
+                    members: [],
+                    questNumber: 2,
+                    results: [],
+                    votes: new Map<string, boolean>(),
+                },
+                {
+                    status: QuestAttemptStatus.PENDING_PROPOSAL_VOTES,
+                    attemptNumber: 1,
+                    leader: "Adhish",
+                    members: ["Jack", "Kate", "Harsh", "Kathrine"],
+                    questNumber: 3,
+                    results: [],
+                    votes: new Map<string, boolean>(),
+                },
+            ],
+            roleList: [
+                Role.ASSASSIN,
+                Role.LOYAL_SERVANT,
+                Role.MERLIN,
+                Role.MORGANA,
+                Role.PERCIVAL
+            ]
         };
         if (!this.userReverseMap.has(userId)) {
             return delay<any>("Game not found", true);
