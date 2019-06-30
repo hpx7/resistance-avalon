@@ -47,7 +47,7 @@ def join_game(game_id, player_name):
   player_id = random_id()
   result = games.update_one(
     {'id': game_id, 'players.name': {'$ne': player_name}, 'quests': []},
-    {'$push': {'players': {'id': player_id, 'name': player_name}}}
+    {'$push': {'players': {'id': player_id, 'name': player_name, 'role': None}}}
   )
   return flask.jsonify({'playerId': player_id, 'success': True}) if result.modified_count else flask.jsonify({'success': False})
 
@@ -60,7 +60,7 @@ def start_game(game_id, player_id):
 
   shuffled_roles = random.sample(role_list, len(role_list))
   result = games.update_one(
-    {'id': game_id, 'players.id': player_id, 'players.name': {'$all': player_order}, 'quests': []},
+    {'id': game_id, 'players.id': player_id, 'players.name': {'$all': player_order}, 'players': {'$size': len(player_order)}, 'quests': []},
     {
       '$set': {'players.$[{}].role'.format(name): role for name, role in zip(player_order, shuffled_roles)},
       '$push': {'quests': create_quest(1, 1, random.choice(player_order), len(player_order))}
@@ -77,7 +77,7 @@ def get_state(game_id, player_id):
   player = next(player for player in game['players'] if player['id'] == player_id)
   return flask.jsonify({
     'players': [player['name'] for player in game['players']],
-    'roleList': sorted([player['role'] for player in game['players']]),
+    'roleList': sorted([player['role'] for player in game['players'] if player['role']]),
     'questConfigurations': quest_configurations.get(len(game['players'])),
     'myName': player['name'],
     'myRole': player['role'],
@@ -178,7 +178,9 @@ def create_quest(roundNumber, attemptNumber, leader, num_players):
   }
 
 def get_player_knowledge(game, player):
-  return [p['name'] for p in game['players'] if p['id'] != player['id'] and p['role'] in role_knowledge[player['role']]]
+  knowledge = role_knowledge.get(player['role']) or []
+  known_players = [p for p in game['players'] if p['id'] != player['id'] and p['role'] in knowledge]
+  return {'players': [p['name'] for p in known_players], 'roles': sorted([p['role'] for p in known_players])}
 
 def sanitize_quests(game):
   quests = copy.deepcopy(game['quests'])
