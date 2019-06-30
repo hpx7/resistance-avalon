@@ -54,7 +54,7 @@ def join_game(game_id, player_name):
 @app.route('/api/start/<game_id>/<player_id>', methods=['POST'])
 def start_game(game_id, player_id):
   role_list = flask.request.json.get('roleList')
-  player_order = flask.request.json['playerOrder']
+  player_order = flask.request.json.get('playerOrder')
   if role_list is None or player_order is None or len(role_list) != len(player_order) or len(role_list) not in quest_configurations:
     return flask.jsonify({'success': False})
 
@@ -76,8 +76,8 @@ def get_state(game_id, player_id):
     return flask.jsonify({'success': False})
   player = next(player for player in game['players'] if player['id'] == player_id)
   return flask.jsonify({
-    'players': [player['name'] for player in game['players']],
-    'roleList': sorted([player['role'] for player in game['players'] if player['role']]),
+    'players': extract('name', game['players']),
+    'roleList': sorted(extract('role', game['players'])),
     'questConfigurations': quest_configurations.get(len(game['players'])),
     'myName': player['name'],
     'myRole': player['role'],
@@ -161,6 +161,9 @@ def vote_in_quest(quest_id, player_id, player_name, vote):
 def random_id():
   return ''.join(random.choices(string.ascii_letters + string.digits, k = 6))
 
+def extract(key, objects):
+  return [o[key] for o in objects if o.get(key)]
+
 def create_quest(roundNumber, attemptNumber, leader, num_players):
   return {
     'id': random_id(),
@@ -178,13 +181,11 @@ def create_quest(roundNumber, attemptNumber, leader, num_players):
   }
 
 def get_player_knowledge(game, player):
-  knowledge = role_knowledge.get(player['role']) or []
-  known_players = [p for p in game['players'] if p['id'] != player['id'] and p['role'] in knowledge]
-  return {'players': [p['name'] for p in known_players], 'roles': sorted([p['role'] for p in known_players])}
+  known_players = [p for p in game['players'] if p['id'] != player['id'] and p['role'] in role_knowledge.get(player['role'], [])]
+  return {'players': extract('name', known_players), 'roles': sorted(extract('role', known_players))}
 
 def sanitize_quests(game):
   quests = copy.deepcopy(game['quests'])
-  # mask in-progress voting and anonymize votes
   for quest in quests:
     quest['votes'] = sorted(quest['votes'], key = lambda vote: vote['player']) if quest['remainingVotes'] == 0 else []
     quest['results'] = [result['vote'] for result in quest['results']] if quest['remainingResults'] == 0 else []
