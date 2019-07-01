@@ -8,3 +8,4 @@ export const SetGameId = TypedAction.define("SET_GAME_ID")<string>();
 export const SetHomeAction = TypedAction.define("SET_HOME_ACTION")<HomeAction>();
 export const SetGameAction = TypedAction.define("SET_GAME_ACTION")<GameAction>();
 export const CreateToast = TypedAsyncAction.define("CREATE_TOAST")<string, string, string>();
+export const SetTitle = TypedAction.define("SET_TITLE")<string>();

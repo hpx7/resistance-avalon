@@ -18,6 +18,7 @@ export enum Role {
 }
 
 export enum GameAction {
+    VIEW_ROLES = "view_roles",
     VIEW_PLAYERS = "view_players",
     VIEW_QUESTS = "view_quests",
 }

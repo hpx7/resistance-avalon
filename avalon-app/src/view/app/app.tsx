@@ -6,17 +6,21 @@ import { GamePath, HomePath } from "../../paths";
 import { Game } from "../game/game";
 import { NotFound } from "../notFound/notFound";
 import { IGamePathParams } from "../../paths/game";
+import styles from "./app.module.scss";
+import { Classes } from "@blueprintjs/core";
 
 class ConnectedApp extends React.PureComponent<RouteComponentProps<any>> {
     public render() {
         return (
-            <div>
-            <Switch>
-                <Route exact={true} path="/" render={this.renderRootRedirect} />
-                <Route path={HomePath.TEMPLATE} render={this.renderHome} />
-                <Route path={GamePath.TEMPLATE} render={this.renderGame} />
-                <Route render={this.renderDefault} />
-            </Switch>
+            <div className={Classes.DARK}>
+                <div className={styles.body}>
+                    <Switch>
+                        <Route exact={true} path="/" render={this.renderRootRedirect} />
+                        <Route path={HomePath.TEMPLATE} render={this.renderHome} />
+                        <Route path={GamePath.TEMPLATE} render={this.renderGame} />
+                        <Route render={this.renderDefault} />
+                    </Switch>
+                </div>
             </div>
         );
     }

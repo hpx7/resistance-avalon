@@ -1,4 +1,5 @@
 import { Dispatch } from "redux";
+import { SetTitle } from "../state/actions";
 import {
     SetGameAction,
     HomeAction,
@@ -31,5 +32,9 @@ export class StateService {
 
     public setGameAction(gameAction: GameAction) {
         this.dispatch(SetGameAction.create(gameAction));
+    }
+
+    public setDocumentTitle(title: string) {
+        this.dispatch(SetTitle.create(title));
     }
 }

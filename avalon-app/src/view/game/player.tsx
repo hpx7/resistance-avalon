@@ -4,8 +4,8 @@ import styles from "./player.module.scss";
 import { IconNames } from "@blueprintjs/icons";
 import { IGame, Role } from "../../state/types";
 import { assertNever } from "../../common/assertNever";
-import { isNotNullish } from "../../common/nullish";
 import { capitalize } from "lodash-es";
+import { NullableValue } from "../../common/nullableValue";
 
 interface IProps {
     player: string;
@@ -20,12 +20,11 @@ export class Player extends React.PureComponent<IProps> {
         showMyself: true,
     }
     private static STRINGS = {
-        BAD_GUYS_TEXT: "This person is definitely one of the minions of Mordred.",
+        BAD_GUYS_TEXT: "This person is one of the minions of Mordred.",
         PERCIVAL_TEXT: "This person is either Merlin or Morgana."
     }
 
     public render() {
-        console.log("swag");
         const {
             game: {
                 knowledge, myRole, myName
@@ -41,7 +40,7 @@ export class Player extends React.PureComponent<IProps> {
             (showMyself && player === myName)
                 ? <div key="your-role" className={styles.you}>(You are {capitalize(myRole)})</div>
                 : undefined,
-        ].filter(isNotNullish);
+        ].filter(NullableValue.isNotNullish);
         return (
             <div className={styles.player}>
                 <div className={styles.playerMainContent}>

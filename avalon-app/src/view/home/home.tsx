@@ -1,5 +1,14 @@
 import React from "react";
-import { FormGroup, InputGroup, Button, Intent, Card, Classes, Elevation, H2, Collapse } from "@blueprintjs/core";
+import {
+    FormGroup,
+    InputGroup,
+    Button,
+    Intent,
+    Card,
+    Elevation,
+    H2,
+    Collapse
+} from "@blueprintjs/core";
 import styles from "./home.module.scss";
 import { IHomeState } from "../../state";
 import { IApplicationState, HomeAction } from "../../state/types";
@@ -19,6 +28,7 @@ type HomeProps = IOwnProps & IHomeState;
 class UnconnectedHome extends React.PureComponent<HomeProps> {
     public static contextTypes = ContextType;
     private static STRINGS = {
+        AVALON_TITLE: "Avalon",
         JOIN_GAME_TITLE: "Join a game",
         CREATE_GAME_TITLE: "Create a game",
         USER_NAME_LABEL: "Name",
@@ -38,33 +48,31 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
     private services = getServices(this.context);
 
     public componentDidMount() {
+        const { STRINGS } = UnconnectedHome;
         this.services.stateService.clearGame();
+        this.services.stateService.setDocumentTitle(STRINGS.AVALON_TITLE)
     }
 
     public render() {
         const isJoinGameAction = this.shouldShowActionMatch(HomeAction.JOIN_GAME);
         const isCreateGameAction = this.shouldShowActionMatch(HomeAction.CREATE_GAME);
         return (
-            <div className={classNames(styles.home, Classes.DARK)}>
-                <div className={styles.body}>
-                    <Card elevation={Elevation.THREE}>
-                        <Collapse
-                            className={classNames({[styles.fadeCollapse]: isJoinGameAction})}
-                            transitionDuration={400}
-                            isOpen={isJoinGameAction}
-                        >
-                            {this.maybeRenderJoinGame()}
-                        </Collapse>
-                        <Collapse
-                            className={classNames({[styles.fadeCollapse]: isCreateGameAction})}
-                            transitionDuration={400}
-                            isOpen={isCreateGameAction}
-                        >
-                            {this.maybeRenderCreateGame()}
-                        </Collapse>
-                    </Card>
-                </div>
-            </div>
+            <Card elevation={Elevation.THREE} className={styles.home}>
+                <Collapse
+                    className={classNames({[styles.fadeCollapse]: isJoinGameAction})}
+                    transitionDuration={400}
+                    isOpen={isJoinGameAction}
+                >
+                    {this.maybeRenderJoinGame()}
+                </Collapse>
+                <Collapse
+                    className={classNames({[styles.fadeCollapse]: isCreateGameAction})}
+                    transitionDuration={400}
+                    isOpen={isCreateGameAction}
+                >
+                    {this.maybeRenderCreateGame()}
+                </Collapse>
+            </Card>
         );
     }
 
