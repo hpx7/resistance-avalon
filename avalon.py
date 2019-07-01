@@ -3,7 +3,6 @@ import random
 import string
 import flask
 import json
-import copy
 import os
 
 app = flask.Flask(__name__)
@@ -82,7 +81,7 @@ def get_state(game_id, player_id):
     'myName': player['name'],
     'myRole': player['role'],
     'knowledge': get_player_knowledge(game, player),
-    'quests': sanitize_quests(game)
+    'quests': [sanitize_quest(game, quest, player) for quest in game['quests']]
   })
 
 @app.route('/api/propose/<quest_id>/<player_id>/<player_name>', methods=['POST'])
@@ -187,22 +186,25 @@ def get_player_knowledge(game, player):
     'roles': {role: role not in evil_roles for role in extract('role', known_players)}
   }
 
-def sanitize_quests(game):
-  quests = copy.deepcopy(game['quests'])
-  for quest in quests:
-    quest['votes'] = sorted(quest['votes'], key = lambda vote: vote['player']) if quest['remainingVotes'] == 0 else []
-    quest['results'] = [result['vote'] for result in quest['results']] if quest['remainingResults'] == 0 else []
-    quest['status'] = get_quest_status(quest)
-    del quest['voteStatus']
-    del quest['failures']
-  return quests
+def sanitize_quest(game, quest, player):
+  newQuest = quest.copy()
+  newQuest['votes'] = sorted(quest['votes'], key = lambda vote: vote['player']) if quest['remainingVotes'] == 0 else []
+  newQuest['results'] = [result['vote'] for result in quest['results']] if quest['remainingResults'] == 0 else []
+  newQuest['myVote'] = next((vote['vote'] for vote in quest['votes'] if vote['player'] == player['name']), None)
+  newQuest['status'] = get_quest_status(game, quest)
+  del newQuest['voteStatus']
+  del newQuest['failures']
+  return newQuest
 
 def get_next_leader(game, quest):
   players = game['players']
   idx = next(i for i in range(len(players)) if players[i]['name'] == quest['leader'])
   return players[(idx + 1) % len(players)]['name']
 
-def get_quest_status(quest):
+def did_quest_pass(game, quest):
+  return quest['failures'] == 0 or (quest['roundNumber'] == 4 and len(game['players']) > 6 and quest['failures'] == 1)
+
+def get_quest_status(game, quest):
   if not quest['members']:
     return 'proposing_quest'
   if quest['remainingVotes'] > 0:
@@ -211,4 +213,4 @@ def get_quest_status(quest):
     return 'proposal_rejected'
   if quest['remainingResults'] > 0:
     return 'voting_in_quest'
-  return 'passed' if quest['failures'] == 0 or (quest['roundNumber'] == 4 and len(game['players']) > 6 and quest['failures'] == 1) else 'failed'
+  return 'passed' if did_quest_pass(game, quest) else 'failed'
