@@ -5,7 +5,7 @@ import flask
 import json
 import os
 
-app = flask.Flask(__name__)
+app = flask.Flask(__name__, static_folder='avalon-app/build/static', template_folder='avalon-app/build')
 
 # database
 games = pymongo.MongoClient().db.games
@@ -123,9 +123,10 @@ def vote_for_proposal(quest_id, player_id, player_name, vote):
 
   # move to next leader if proposal was rejected
   quest = next(quest for quest in game['quests'] if quest['id'] == quest_id)
+  next_quest = create_quest(quest['roundNumber'], quest['attemptNumber'] + 1, get_next_leader(game, quest), len(game['players']))
   games.update_one(
     {'quests': {'$elemMatch': {'id': quest_id, 'remainingVotes': 0, 'voteStatus': {'$lte': 0}, 'attemptNumber': {'$lt': 5}}}},
-    {'$push': {'quests': create_quest(quest['roundNumber'], quest['attemptNumber'] + 1, get_next_leader(game, quest), len(game['players']))}}
+    {'$push': {'quests': next_quest}}
   )
   return flask.jsonify({'success': True})
 
@@ -151,11 +152,17 @@ def vote_in_quest(quest_id, player_id, player_name, vote):
 
   # move on to next round if all results have been collected (or do nothing if game is over)
   quest = next(quest for quest in game['quests'] if quest['id'] == quest_id)
+  next_quest = create_quest(quest['roundNumber'] + 1, 1, get_next_leader(game, quest), len(game['players']))
   games.update_one(
     {'quests': {'$elemMatch': {'id': quest_id, 'remainingResults': 0, 'roundNumber': {'$lt': 5}}}},
-    {'$push': {'quests': create_quest(quest['roundNumber'] + 1, 1, get_next_leader(game, quest), len(game['players']))}}
+    {'$push': {'quests': next_quest}}
   )
   return flask.jsonify({'success': True})
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+  return flask.render_template('index.html')
 
 def random_id():
   return ''.join(random.choices(string.ascii_letters + string.digits, k = 6))
@@ -187,14 +194,14 @@ def get_player_knowledge(game, player):
   }
 
 def sanitize_quest(game, quest, player):
-  newQuest = quest.copy()
-  newQuest['votes'] = sorted(quest['votes'], key = lambda vote: vote['player']) if quest['remainingVotes'] == 0 else []
-  newQuest['results'] = [result['vote'] for result in quest['results']] if quest['remainingResults'] == 0 else []
-  newQuest['myVote'] = next((vote['vote'] for vote in quest['votes'] if vote['player'] == player['name']), None)
-  newQuest['status'] = get_quest_status(game, quest)
-  del newQuest['voteStatus']
-  del newQuest['failures']
-  return newQuest
+  new_quest = quest.copy()
+  new_quest['votes'] = sorted(quest['votes'], key = lambda vote: vote['player']) if quest['remainingVotes'] == 0 else []
+  new_quest['results'] = [result['vote'] for result in quest['results']] if quest['remainingResults'] == 0 else []
+  new_quest['myVote'] = next((vote['vote'] for vote in quest['votes'] if vote['player'] == player['name']), None)
+  new_quest['status'] = get_quest_status(game, quest)
+  del new_quest['voteStatus']
+  del new_quest['failures']
+  return new_quest
 
 def get_next_leader(game, quest):
   players = game['players']
