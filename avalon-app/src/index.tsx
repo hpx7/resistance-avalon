@@ -21,7 +21,7 @@ const middlewareEnhancer = composeWithDevTools(applyMiddleware(
 const createStoreWithMiddleware = middlewareEnhancer<IApplicationState>(createStore);
 const store = createStoreWithMiddleware(appReducer, INITIAL_APPLICATION_STATE);
 
-const api = createApi({ gameServiceApi: "mock" });
+const api = createApi({ gameServiceApi: "" });
 
 const stateService = new StateService(store.dispatch);
 const gameService = new GameService(store.dispatch, api.gameService);
