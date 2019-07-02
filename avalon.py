@@ -35,11 +35,12 @@ quest_configurations = {
   10: [3, 4, 4, 5, 5]
 }
 
-@app.route('/api/create', methods=['POST'])
-def create_game():
+@app.route('/api/create/<player_name>', methods=['POST'])
+def create_game(player_name):
   game_id = random_id()
-  games.insert_one({'id': game_id, 'players': [], 'quests': []})
-  return flask.jsonify({'gameId': game_id, 'success': True})
+  player_id = random_id()
+  games.insert_one({'id': game_id, 'creator': player_name, 'players': [{'id': player_id, 'name': player_name, 'role': None}], 'quests': []})
+  return flask.jsonify({'gameId': game_id, 'playerId': player_id, 'success': True})
 
 @app.route('/api/join/<game_id>/<player_name>', methods=['POST'])
 def join_game(game_id, player_name):
@@ -48,10 +49,10 @@ def join_game(game_id, player_name):
     {'id': game_id, 'players.name': {'$ne': player_name}, 'quests': []},
     {'$push': {'players': {'id': player_id, 'name': player_name, 'role': None}}}
   )
-  return flask.jsonify({'playerId': player_id, 'success': True}) if result.modified_count else flask.jsonify({'success': False})
+  return flask.jsonify({'playerId': player_id, 'success': bool(result.modified_count)})
 
-@app.route('/api/start/<game_id>/<player_id>', methods=['POST'])
-def start_game(game_id, player_id):
+@app.route('/api/start/<game_id>/<player_id>/<player_name>', methods=['POST'])
+def start_game(game_id, player_id, player_name):
   role_list = flask.request.json.get('roleList')
   player_order = flask.request.json.get('playerOrder')
   if role_list is None or player_order is None or len(role_list) != len(player_order) or len(role_list) not in quest_configurations:
@@ -59,7 +60,13 @@ def start_game(game_id, player_id):
 
   shuffled_roles = random.sample(role_list, len(role_list))
   result = games.update_one(
-    {'id': game_id, 'players.id': player_id, 'players.name': {'$all': player_order}, 'players': {'$size': len(player_order)}, 'quests': []},
+    {
+      'id': game_id,
+      'creator': player_name,
+      'players': {'$size': len(player_order), '$elemMatch': {'id': player_id, 'name': player_name}},
+      'players.name': {'$all': player_order},
+      'quests': []
+    },
     {
       '$set': {'players.$[{}].role'.format(name): role for name, role in zip(player_order, shuffled_roles)},
       '$push': {'quests': create_quest(1, 1, random.choice(player_order), len(player_order))}
@@ -75,20 +82,21 @@ def get_state(game_id, player_id):
     return flask.jsonify({'success': False})
   player = next(player for player in game['players'] if player['id'] == player_id)
   return flask.jsonify({
+    'creator': game['creator'],
     'players': extract('name', game['players']),
     'roles': {role: role not in evil_roles for role in extract('role', game['players'])},
     'questConfigurations': quest_configurations.get(len(game['players'])),
     'myName': player['name'],
     'myRole': player['role'],
     'knowledge': get_player_knowledge(game, player),
-    'quests': [sanitize_quest(game, quest, player) for quest in game['quests']]
+    'questAttempts': [sanitize_quest(game, quest, player) for quest in game['quests']]
   })
 
 @app.route('/api/propose/<quest_id>/<player_id>/<player_name>', methods=['POST'])
 def propose_quest(quest_id, player_id, player_name):
   proposed_members = flask.request.json.get('proposal')
   if proposed_members is None:
-    return flask.jsonify({'error': True})
+    return flask.jsonify({'success': False})
 
   result = games.update_one(
     {
