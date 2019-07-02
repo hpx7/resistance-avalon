@@ -39,14 +39,14 @@ quest_configurations = {
 def create_game(player_name):
   game_id = random_id()
   player_id = random_id()
-  games.insert_one({'id': game_id, 'creator': player_name, 'players': [{'id': player_id, 'name': player_name, 'role': None}], 'quests': []})
+  games.insert_one({'id': game_id, 'creator': player_name, 'players': [{'id': player_id, 'name': player_name, 'role': None}], 'quests': [], status: 'not_started'})
   return flask.jsonify({'gameId': game_id, 'playerId': player_id, 'success': True})
 
 @app.route('/api/join/<game_id>/<player_name>', methods=['POST'])
 def join_game(game_id, player_name):
   player_id = random_id()
   result = games.update_one(
-    {'id': game_id, 'players.name': {'$ne': player_name}, 'quests': []},
+    {'id': game_id, 'players.name': {'$ne': player_name}, 'quests': [], status: 'not_started'},
     {'$push': {'players': {'id': player_id, 'name': player_name, 'role': None}}}
   )
   return flask.jsonify({'playerId': player_id, 'success': bool(result.modified_count)})
@@ -65,11 +65,13 @@ def start_game(game_id, player_id, player_name):
       'creator': player_name,
       'players': {'$size': len(player_order), '$elemMatch': {'id': player_id, 'name': player_name}},
       'players.name': {'$all': player_order},
-      'quests': []
+      'quests': [],
+      'status': 'not_started'
     },
     {
       '$set': {'players.$[{}].role'.format(name): role for name, role in zip(player_order, shuffled_roles)},
       '$push': {'quests': create_quest(1, 1, random.choice(player_order), len(player_order))}
+      '$set': {'status': 'started'},
     },
     array_filters = [{'{}.name'.format(name): name} for name in player_order]
   )
