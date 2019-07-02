@@ -1,6 +1,5 @@
 import React from "react";
-import { NonIdealState, Button, Intent } from "@blueprintjs/core";
-import styles from "./notFound.module.scss";
+import { NonIdealState, Button, Intent, Card, Elevation } from "@blueprintjs/core";
 import { PathLink } from "../../common/navigationWithPath";
 import { HomePath } from "../../paths/home";
 import { IconNames } from "@blueprintjs/icons";
@@ -14,12 +13,13 @@ export class NotFound extends React.PureComponent<{}> {
     public render() {
         const { STRINGS } = NotFound;
         return (
-            <NonIdealState
-                className={styles.notFound}
-                title={STRINGS.TITLE}
-                icon={IconNames.ERROR}
-                action={this.renderBackToHome()}
-            />
+            <Card elevation={Elevation.THREE}>
+                <NonIdealState
+                    title={STRINGS.TITLE}
+                    icon={IconNames.ERROR}
+                    action={this.renderBackToHome()}
+                />
+            </Card>
         );
     }
 

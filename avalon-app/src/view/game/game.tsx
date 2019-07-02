@@ -12,6 +12,7 @@ import {
     Icon,
     IIconProps,
     Intent,
+    NonIdealState,
 } from "@blueprintjs/core";
 import styles from "./game.module.scss";
 import { ContextType, getServices } from "../../common/contextProvider";
@@ -55,6 +56,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         WAITING_FOR_OTHER_VOTES: "Waiting for other players to vote.",
         PROPOSAL_TITLE: "Do you approve or reject this proposal?",
         QUEST_TITLE: "Do you approve or reject this quest?",
+        GAME_NOT_STARTED: "The game has not started and roles have not been specified",
         PASS: "Pass",
         FAIL: "Fail",
         APPROVE: "Approve",
@@ -150,9 +152,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                     return (
                         <div>
                             <H2 className={styles.gameHeader}>{STRINGS.ROLES}</H2>
-                            {NullableValue.of(game.value.roles)
-                                .map(this.renderRoles)
-                                .getOrUndefined()}
+                            {this.renderRoles(game.value.roles)}
                         </div>
                     );
                 case GameAction.VIEW_PLAYERS:
@@ -344,10 +344,17 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
     }
 
     private renderRoles = (roles: Map<string, boolean>) => {
-        return Object.keys(roles).map((role, idx) => {
-            const classes = classNames(styles.role, roles.get(role) ? styles.good : styles.bad);
-            return <div key={`${role}-${idx}`} className={classes}>{role}</div>
-        });
+        const { STRINGS } = UnconnectedGame;
+        return CountableValue.of(Object.keys(roles))
+            .map((role, idx) => {
+                const classes = classNames(styles.role, roles.get(role) ? styles.good : styles.bad);
+                return <div key={`${role}-${idx}`} className={classes}>{role}</div>
+            }).getValueOrDefaultIfEmpty(
+                <NonIdealState
+                    title={STRINGS.GAME_NOT_STARTED}
+                    icon={IconNames.WARNING_SIGN}
+                />
+            );
     }
 
     private redirectToHome = () => {

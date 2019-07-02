@@ -12,7 +12,7 @@ export class CountableValue<T> {
         this.value = value;
     }
 
-    public map<V>(mapper: (value: T) => V): CountableValue<V> {
+    public map<V>(mapper: (value: T, idx: number) => V): CountableValue<V> {
         return CountableValue.of(this.value.map(mapper));
     }
 
@@ -30,5 +30,13 @@ export class CountableValue<T> {
 
     public count(): number {
         return this.value.length;
+    }
+
+    public getValue() {
+        return this.value;
+    }
+
+    public getValueOrDefaultIfEmpty<T>(defaultValue: T) {
+        return this.isEmpty() ? defaultValue : this.value;
     }
 }
