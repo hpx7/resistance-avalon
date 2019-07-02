@@ -42,84 +42,121 @@ export type IAsyncLoaded<V, E = Error> =
     | IAsyncReloading<V>
     | IAsyncLoadingFailed<V, E>;
 
-export function isNotStartedLoading<V, E>(
-    state: IAsyncLoaded<V, E> | undefined
-): state is IAsyncNotStartedLoading | undefined {
-    return undefined === state || state.status === AsyncStatus.NOT_STARTED_LOADING;
-}
+export class AsyncLoadedValue {
 
-export function isLoading<V, E>(state: IAsyncLoaded<V, E> | undefined): state is IAsyncLoading {
-    return undefined !== state && state.status === AsyncStatus.LOADING;
-}
-
-export function isLoadingSucceeded<V, E>(state: IAsyncLoaded<V, E> | undefined): state is IAsyncLoadingSucceeded<V> {
-    return undefined !== state && state.status === AsyncStatus.LOADING_SUCCEEDED;
-}
-
-export function isLoadingFailed<V, E>(state: IAsyncLoaded<V, E> | undefined): state is IAsyncLoadingFailed<V, E> {
-    return undefined !== state && state.status === AsyncStatus.LOADING_FAILED;
-}
-
-export function isReloading<V, E>(state: IAsyncLoaded<V, E> | undefined): state is IAsyncReloading<V> {
-    return undefined !== state && state.status === AsyncStatus.RELOADING;
-}
-
-export function isReady<V, E>(
-    state: IAsyncLoaded<V, E> | undefined,
-): state is IAsyncLoadingSucceeded<V> | IAsyncReloading<V> {
-    return isLoadingSucceeded(state) || isReloading(state);
-}
-
-export function hasValue<V, E>(
-    state: IAsyncLoaded<V, E> | undefined,
-): state is IAsyncLoadingSucceeded<V> | IAsyncReloading<V> | IAsyncLoadingFailed<V, E> {
-    return isReady(state) || (isLoadingFailed(state) && undefined !== state.previousValue);
-}
-
-const EMPTY_ASYNC_NOT_STARTED_LOADING: IAsyncNotStartedLoading = {
-    status: AsyncStatus.NOT_STARTED_LOADING,
-};
-
-export function asyncNotStartedLoading(): IAsyncNotStartedLoading {
-    return EMPTY_ASYNC_NOT_STARTED_LOADING;
-}
-
-const EMPTY_ASYNC_LOADING: IAsyncLoading = {
-    status: AsyncStatus.LOADING,
-    progress: undefined,
-};
-
-export function asyncLoading(progress?: number): IAsyncLoading {
-    if (progress === undefined) {
-        return EMPTY_ASYNC_LOADING;
-    }
-    return {
-        progress,
+    private static EMPTY_ASYNC_LOADING: IAsyncLoading = {
         status: AsyncStatus.LOADING,
+        progress: undefined,
     };
-}
 
-export function asyncLoadingSucceeded<V>(value: V): IAsyncLoadingSucceeded<V> {
-    return {
-        status: AsyncStatus.LOADING_SUCCEEDED,
-        value,
+    private static EMPTY_ASYNC_NOT_STARTED_LOADING: IAsyncNotStartedLoading = {
+        status: AsyncStatus.NOT_STARTED_LOADING,
     };
-}
 
-export function asyncLoadingFailed<V, E>(error: E, previousValue?: V): IAsyncLoadingFailed<V, E> {
-    return {
-        error,
-        status: AsyncStatus.LOADING_FAILED,
-        previousValue,
-    };
-}
+    public static isNotStartedLoading<V, E>(
+        state: IAsyncLoaded<V, E> | undefined
+    ): state is IAsyncNotStartedLoading | undefined {
+        return undefined === state || state.status === AsyncStatus.NOT_STARTED_LOADING;
+    }
 
-export function asyncReloading<V>(value: V, progress?: number): IAsyncReloading<V> {
-    return {
-        progress,
-        status: AsyncStatus.RELOADING,
-        value,
-    };
+    public static isLoading<V, E>(state: IAsyncLoaded<V, E> | undefined): state is IAsyncLoading {
+        return undefined !== state && state.status === AsyncStatus.LOADING;
+    }
+
+    public static isLoadingSucceeded<V, E>(state: IAsyncLoaded<V, E> | undefined): state is IAsyncLoadingSucceeded<V> {
+        return undefined !== state && state.status === AsyncStatus.LOADING_SUCCEEDED;
+    }
+
+    public static isLoadingFailed<V, E>(state: IAsyncLoaded<V, E> | undefined): state is IAsyncLoadingFailed<V, E> {
+        return undefined !== state && state.status === AsyncStatus.LOADING_FAILED;
+    }
+
+    public static isReloading<V, E>(state: IAsyncLoaded<V, E> | undefined): state is IAsyncReloading<V> {
+        return undefined !== state && state.status === AsyncStatus.RELOADING;
+    }
+
+    public static isReady<V, E>(
+        state: IAsyncLoaded<V, E> | undefined,
+    ): state is IAsyncLoadingSucceeded<V> | IAsyncReloading<V> {
+        return AsyncLoadedValue.isLoadingSucceeded(state) || AsyncLoadedValue.isReloading(state);
+    }
+
+    public static hasValue<V, E>(
+        state: IAsyncLoaded<V, E> | undefined,
+    ): state is IAsyncLoadingSucceeded<V> | IAsyncReloading<V> | IAsyncLoadingFailed<V, E> {
+        return AsyncLoadedValue.isReady(state)
+            || (AsyncLoadedValue.isLoadingFailed(state) && undefined !== state.previousValue);
+    }
+
+    public static asyncNotStartedLoading(): IAsyncNotStartedLoading {
+        return AsyncLoadedValue.EMPTY_ASYNC_NOT_STARTED_LOADING;
+    }
+
+    public static asyncLoading(progress?: number): IAsyncLoading {
+        if (progress === undefined) {
+            return AsyncLoadedValue.EMPTY_ASYNC_LOADING;
+        }
+        return {
+            progress,
+            status: AsyncStatus.LOADING,
+        };
+    }
+
+    public static asyncLoadingSucceeded<V>(value: V): IAsyncLoadingSucceeded<V> {
+        return {
+            status: AsyncStatus.LOADING_SUCCEEDED,
+            value,
+        };
+    }
+
+    public static asyncLoadingFailed<V, E>(error: E, previousValue?: V): IAsyncLoadingFailed<V, E> {
+        return {
+            error,
+            status: AsyncStatus.LOADING_FAILED,
+            previousValue,
+        };
+    }
+
+    public static asyncReloading<V>(value: V, progress?: number): IAsyncReloading<V> {
+        return {
+            progress,
+            status: AsyncStatus.RELOADING,
+            value,
+        };
+    }
+
+    public static mapAsyncLoaded<V, E, T>(async: IAsyncLoaded<V, E>, selector: (value: V) => T): IAsyncLoaded<T, E> {
+        if (AsyncLoadedValue.isReady(async)) {
+            return { ...async, value: selector(async.value) };
+        }
+        if (AsyncLoadedValue.isLoadingFailed(async)) {
+            if (async.previousValue !== undefined) {
+                return { ...async, previousValue: selector(async.previousValue!) };
+            }
+            return { status: async.status, error: async.error };
+        }
+        return async;
+    }
+
+    public static getValueOrUndefined<V, E>(async: IAsyncLoaded<V, E>) {
+        return AsyncLoadedValue.getValueOrDefault(async, undefined);
+
+    }
+
+    public static getValueOrNull<V, E>(async: IAsyncLoaded<V, E>) {
+        return AsyncLoadedValue.getValueOrDefault(async, null);
+    }
+
+    public static getValueOrDefault<V, E>(async: IAsyncLoaded<V, E>, defaultValue: V) {
+        return this.isReady(async) ? async.value : defaultValue;
+    }
+
+    public static valueCheck<V, E>(
+        async: IAsyncLoaded<V, E>,
+        check: (value: V) => boolean,
+        ifNoValue: boolean = true): boolean {
+        return this.isReady(async) ? check(async.value) : ifNoValue;
+    }
 }
 
 export interface TypedAsyncAction<P, S, F> {
@@ -161,26 +198,28 @@ class TypedAsyncLoadedReducerImpl<V, E = Error> implements Builder<V, E> {
         getProgress?: (payload: P) => number,
     ) {
         this.builder
-            .withHandler(action.Clear.TYPE, () => asyncNotStartedLoading())
+            .withHandler(action.Clear.TYPE, () => AsyncLoadedValue.asyncNotStartedLoading())
             .withHandler(
                 action.InProgress.TYPE,
                 (state, payload): IAsyncLoading | IAsyncReloading<V> => {
                     const progress = undefined !== getProgress ? getProgress(payload) : undefined;
-                    if (isNotStartedLoading(state) || isLoading(state) || isLoadingFailed(state)) {
-                        return asyncLoading(progress);
-                    } else if (isLoadingSucceeded(state) || isReloading(state)) {
-                        return asyncReloading(state.value, progress);
+                    if (AsyncLoadedValue.isNotStartedLoading(state)
+                        || AsyncLoadedValue.isLoading(state)
+                        || AsyncLoadedValue.isLoadingFailed(state)) {
+                        return AsyncLoadedValue.asyncLoading(progress);
+                    } else if (AsyncLoadedValue.isLoadingSucceeded(state) || AsyncLoadedValue.isReloading(state)) {
+                        return AsyncLoadedValue.asyncReloading(state.value, progress);
                     }
                     return assertNever(state);
                 },
             )
             .withHandler(
                 action.Success.TYPE,
-                (_state, payload): IAsyncLoadingSucceeded<V> => asyncLoadingSucceeded(getValue(payload))
+                (_state, payload): IAsyncLoadingSucceeded<V> => AsyncLoadedValue.asyncLoadingSucceeded(getValue(payload))
             )
             .withHandler(
                 action.Failure.TYPE,
-                (_state, payload): IAsyncLoadingFailed<V, E> => asyncLoadingFailed(getError(payload))
+                (_state, payload): IAsyncLoadingFailed<V, E> => AsyncLoadedValue.asyncLoadingFailed(getError(payload))
             );
 
         return this;

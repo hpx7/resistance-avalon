@@ -2,6 +2,7 @@ import { Dispatch } from "redux";
 import { IGameService } from "../api";
 import { IApplicationState } from "../state";
 import { SetGame, CreateToast } from "../state/actions";
+import { IStartGameRequest } from "../api/game";
 
 export class GameService {
     constructor(private dispatch: Dispatch<IApplicationState>, private gameService: IGameService) {}
@@ -17,8 +18,8 @@ export class GameService {
             });
     }
 
-    public startGame(gameId: string, userId: string) {
-        return this.gameService.startGame(gameId, userId)
+    public startGame(gameId: string, playerId: string, playerName: string, startGameRequest: IStartGameRequest) {
+        return this.gameService.startGame(gameId, playerId, playerName, startGameRequest)
             .catch(error => {
                 this.dispatch(CreateToast.Failure.create(error));
             });

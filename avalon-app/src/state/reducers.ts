@@ -1,8 +1,8 @@
-import { combineReducers, reduceCompoundActions, TypedReducer, Reducer } from "redoodle";
+import { combineReducers, reduceCompoundActions, TypedReducer, Reducer, composeReducers } from "redoodle";
 import { IApplicationState } from "../state/index";
-import { SetGameId, SetHomeAction, SetUserName, SetGame, SetGameAction } from "./actions";
-import { IGameState, IHomeState, IGame, GameAction } from "./types";
-import { TypedAsyncLoadedReducer } from "../common/redoodle";
+import { SetGameId, SetHomeAction, SetPlayerName, SetGame, SetGameAction } from "./actions";
+import { IGameState, IHomeState, IGame, GameAction, HomeAction } from "./types";
+import { TypedAsyncLoadedReducer, AsyncLoadedValue } from "../common/redoodle";
 
 const gameReducer = TypedAsyncLoadedReducer.builder<IGame, string>()
     .withAsyncLoadHandler(SetGame, game => game, error => error)
@@ -19,45 +19,41 @@ const gameStateReducer = combineReducers<IGameState>({
     gameAction: gameActionReducer
 });
 
-const homeStateReducer = TypedReducer.builder<IHomeState>()
-    .withHandler(SetUserName.TYPE, (state, userName) => {
-        const { hasPreviouslyBeenSet, value } = state.userName;
-        return {
-            ...state,
-            userName: {
-                value: userName,
-                hasPreviouslyBeenSet: hasPreviouslyBeenSet || value !== userName
-            }
-        };
+const homeActionReducer = TypedReducer.builder<HomeAction>()
+    .withHandler(SetHomeAction.TYPE, (state, homeAction) => {
+        return state === homeAction ? state : homeAction;
     })
-    .withHandler(SetGameId.TYPE, (state, gameId) => {
-        const { hasPreviouslyBeenSet, value } = state.gameId;
-        return {
-            ...state,
-            gameId: {
-                value: gameId,
-                hasPreviouslyBeenSet: hasPreviouslyBeenSet || value !== gameId
-            }
-        };
-    })
+    .build();
+
+const playerNameReducer = TypedAsyncLoadedReducer.builder<string, string>()
+    .withAsyncLoadHandler(SetPlayerName, playerName => playerName, error => error)
+    .build();
+
+const gameIdReducer = TypedAsyncLoadedReducer.builder<string, string>()
+    .withAsyncLoadHandler(SetGameId, gameId => gameId, error => error)
+    .build();
+
+const individualHomeStateReducer = combineReducers<IHomeState>({
+    homeAction: homeActionReducer,
+    playerName: playerNameReducer,
+    gameId: gameIdReducer,
+});
+
+const combinedHomeStateReducer = TypedReducer.builder<IHomeState>()
     .withHandler(SetHomeAction.TYPE, (state, homeAction) => {
         if (state.homeAction === homeAction) {
             return state;
         } else {
             return {
                 homeAction,
-                userName: {
-                    value: "",
-                    hasPreviouslyBeenSet: false
-                },
-                gameId: {
-                    value: "",
-                    hasPreviouslyBeenSet: false
-                }
+                playerName: AsyncLoadedValue.asyncNotStartedLoading(),
+                gameId: AsyncLoadedValue.asyncNotStartedLoading(),
             };
         }
     })
     .build();
+
+const homeStateReducer = composeReducers<IHomeState>(individualHomeStateReducer, combinedHomeStateReducer)
 
 export const appReducer: Reducer<IApplicationState> = reduceCompoundActions(combineReducers<IApplicationState>({
     gameState: gameStateReducer,

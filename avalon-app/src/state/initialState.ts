@@ -1,20 +1,14 @@
 import { IApplicationState, HomeAction, GameAction } from "./types";
-import { asyncNotStartedLoading } from "../common/redoodle";
+import { AsyncLoadedValue } from "../common/redoodle";
 
 export const INITIAL_APPLICATION_STATE: IApplicationState = {
     gameState: {
         gameAction: GameAction.VIEW_PLAYERS,
-        game: asyncNotStartedLoading(),
+        game: AsyncLoadedValue.asyncNotStartedLoading(),
     },
     homeState: {
         homeAction: HomeAction.JOIN_GAME,
-        userName: {
-            value: "",
-            hasPreviouslyBeenSet: false,
-        },
-        gameId: {
-            value: "",
-            hasPreviouslyBeenSet: false,
-        }
+        playerName: AsyncLoadedValue.asyncNotStartedLoading(),
+        gameId: AsyncLoadedValue.asyncNotStartedLoading(),
     }
 }

@@ -22,17 +22,18 @@ import { connect } from "react-redux";
 import { History } from "history";
 import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, Role } from "../../state/types";
 import { HomePath } from "../../paths/home";
-import { isReady } from "../../common/redoodle";
 import { times, constant, random, maxBy } from "lodash-es";
 import { Player } from "./player";
 import { assertNever } from "../../common/assertNever";
 import { isEvilRole } from "../../common/role";
 import { CountableValue } from "../../common/countableNumber";
+import { AsyncLoadedValue } from "../../common/redoodle";
 
 interface IOwnProps {
     history: History;
     gameId: string;
-    userId: string;
+    playerId: string;
+    playerName: string;
 }
 
 type GameProps = IOwnProps & IGameState;
@@ -84,7 +85,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                 this.services.stateService.setDocumentTitle(STRINGS.VIEW_PLAYERS_TITLE);
                 return;
             case GameAction.VIEW_QUESTS:
-                if (isReady(game)) {
+                if (AsyncLoadedValue.isReady(game)) {
                     CountableValue.of(game.value.questAttempts)
                         .maybeGetLastElement()
                         .map(this.setDocumentTitleBasedOnQuestAttempt);
@@ -140,7 +141,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
     private renderContent() {
         const { game, gameAction } = this.props;
         const { STRINGS } = UnconnectedGame;
-        if (!isReady(game)) {
+        if (!AsyncLoadedValue.isReady(game)) {
             return this.renderGameSkeleton();
         } else {
             switch (gameAction) {
@@ -232,16 +233,16 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                             <div>Quest {questNumber} - Attempt {attemptNumber}</div>
                             <div>Leader: {leader}</div>
                             <div>Participants:</div>
-                        </div>
-                        <div>
-                            {members.map(member => (
-                                <Player
-                                    player={member}
-                                    game={game}
-                                    showKnowledge={false}
-                                    showMyself={false}
-                                />
-                            ))}
+                            <div>
+                                {members.map(member => (
+                                    <Player
+                                        player={member}
+                                        game={game}
+                                        showKnowledge={false}
+                                        showMyself={false}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     </div>
                 );
@@ -344,8 +345,8 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
     private startFetchingGameState() {
         this.interval = window.setInterval(
             () => {
-                const { gameId, userId } = this.props;
-                this.services.gameService.getGameState(gameId, userId)
+                const { gameId, playerId } = this.props;
+                this.services.gameService.getGameState(gameId, playerId)
                     .then(succeeded => {
                         if (!succeeded) {
                             this.maybeStopFetchingGameState();

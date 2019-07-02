@@ -1,11 +1,11 @@
 import { Dispatch } from "redux";
-import { SetTitle } from "../state/actions";
 import {
+    SetTitle,
     SetGameAction,
     HomeAction,
     GameAction,
     IApplicationState,
-    SetUserName,
+    SetPlayerName,
     SetGameId,
     SetHomeAction,
     SetGame,
@@ -19,11 +19,11 @@ export class StateService {
     }
 
     public setUserName(userName: string) {
-        this.dispatch(SetUserName.create(userName));
+        this.dispatch(SetPlayerName.Success.create(userName));
     }
 
     public setGameId(gameUserId: string) {
-        this.dispatch(SetGameId.create(gameUserId));
+        this.dispatch(SetGameId.Success.create(gameUserId));
     }
 
     public setHomeAction(homeAction: HomeAction) {

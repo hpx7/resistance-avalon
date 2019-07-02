@@ -67,7 +67,7 @@ $logo-size: 3 * $pt-grid-size;
     flex-direction: column;
     align-items: flex-start;
 
-    & > div:not(:first-child) {
+    & > div:not(:first-child):not(:last-child) {
         margin-top: $pt-grid-size;
         width: 100%;
     }

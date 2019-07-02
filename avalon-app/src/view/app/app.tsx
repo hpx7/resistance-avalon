@@ -31,8 +31,8 @@ class ConnectedApp extends React.PureComponent<RouteComponentProps<any>> {
 
     private renderGame = (routeProps: RouteComponentProps<IGamePathParams>) => {
         const { history, match } = routeProps;
-        const { gameId, userId } = match.params;
-        return <Game gameId={gameId} userId={userId} history={history}/>;
+        const { gameId, playerId, playerName } = match.params;
+        return <Game gameId={gameId} playerId={playerId} playerName={playerName} history={history}/>;
     }
 
     private renderDefault = () => <NotFound />;

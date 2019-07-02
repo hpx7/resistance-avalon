@@ -1,6 +1,6 @@
-import { IGameService } from "../api/game";
-import { ICreatedGame, IGame } from "../state";
-import { Role, QuestAttemptStatus } from "../state/types";
+import { IGameService, ICreateGameResponse, IJoinGameResponse, IStartGameRequest, IStartGameResponse, IProposeQuestRequest, IProposeQuestResponse, IVoteOnQuestProposalResponse, IVoteOnQuestResponse } from "../api/game";
+import { IGame } from "../state";
+// import { Role, QuestAttemptStatus } from "../state/types";
 
 const TIMEOUT_IN_MS = 2000;
 
@@ -36,104 +36,124 @@ export class MockGameService implements IGameService {
         this.gameOwnerMap.set("eb2vck", adhishId);
     }
 
-    public createGame(userName: string): Promise<ICreatedGame> {
+    public createGame(playerName: string): Promise<ICreateGameResponse> {
         const gameId = generateId();
-        const userId = this.addUser(userName);
-        this.gameOwnerMap.set(gameId, userId)
-        return delay<ICreatedGame>({ gameId, userId });
+        const playerId = this.addUser(playerName);
+        this.gameOwnerMap.set(gameId, playerId)
+        return delay<ICreateGameResponse>({ gameId, playerId, success: true });
     }
 
-    public startGame(gameId: string, userId: string): Promise<boolean> {
+    public joinGame(gameId: string, playerName: string): Promise<IJoinGameResponse> {
+        throw new Error("Method not implemented.");
+    }
+
+    public startGame(gameId: string, playerId: string, playerName: string, startGameRequest: IStartGameRequest): Promise<IStartGameResponse> {
         if (this.userMap.size < 4) {
             return delay<any>("Too few players", true);
-        } else if (this.gameOwnerMap.get(gameId) !== userId) {
+        } else if (this.gameOwnerMap.get(gameId) !== playerName) {
             return delay<any>("You do not have permission to start the game", true);
         }
-        return delay<boolean>(true);
+        return delay<IStartGameResponse>({ success: true });
     }
 
     public getGameState(gameId: string, userId: string): Promise<IGame> {
-        const game: IGame = {
-            id: gameId,
-            creator: "Admin",
-            myName: "Adhish",
-            myRole: Role.MORDRED,
-            knowledge: ["Jack", "Kate"],
-            players: Array.from(this.userMap.keys()),
-            questConfigurations: [3, 4, 4, 5, 5],
-            questAttempts: [
-                {
-                    status: QuestAttemptStatus.FAILED,
-                    attemptNumber: 1,
-                    leader: "Adhish",
-                    members: [],
-                    questNumber: 1,
-                    results: [],
-                    votes: new Map<string, boolean>(),
-                },
-                {
-                    status: QuestAttemptStatus.PROPOSAL_REJECTED,
-                    attemptNumber: 1,
-                    leader: "Adhish",
-                    members: [],
-                    questNumber: 2,
-                    results: [],
-                    votes: new Map<string, boolean>(),
-                },
-                {
-                    status: QuestAttemptStatus.PROPOSAL_REJECTED,
-                    attemptNumber: 2,
-                    leader: "Adhish",
-                    members: [],
-                    questNumber: 2,
-                    results: [],
-                    votes: new Map<string, boolean>(),
-                },
-                {
-                    status: QuestAttemptStatus.PASSED,
-                    attemptNumber: 3,
-                    leader: "Adhish",
-                    members: [],
-                    questNumber: 2,
-                    results: [],
-                    votes: new Map<string, boolean>(),
-                },
-                {
-                    status: QuestAttemptStatus.PENDING_PROPOSAL_VOTES,
-                    attemptNumber: 1,
-                    leader: "Adhish",
-                    members: ["Jack", "Kate", "Harsh", "Kathrine"],
-                    questNumber: 3,
-                    results: [],
-                    votes: new Map<string, boolean>(),
-                },
-            ],
-            roleList: [
-                Role.ASSASSIN,
-                Role.LOYAL_SERVANT,
-                Role.MERLIN,
-                Role.MORGANA,
-                Role.PERCIVAL
-            ]
-        };
-        if (!this.userReverseMap.has(userId)) {
-            return delay<any>("Game not found", true);
-        }
-        return delay<IGame>(game);
+        throw new Error("Method not implemented.");
     }
 
-    public joinGame(gameId: string, userName: string): Promise<string> {
-        if (!this.gameOwnerMap.has(gameId)) {
-            return delay<any>("Invalid game id", true);
-        } else if (this.userMap.has(userName)) {
-            return delay<any>("user already registered", true);
-        } else if (this.userMap.size > 6) {
-            return delay<any>("too many players", true);
-        } else {
-            this.addUser(userName);
-        }
-        return delay<string>(generateId());
+    public proposeQuest(gameId: string, playerId: string, playerName: string, proposeQuestRequest: IProposeQuestRequest): Promise<IProposeQuestResponse> {
+        throw new Error("Method not implemented.");
     }
+
+    public voteOnQuestProposal(questId: string, playerId: string, playerName: string, vote: number): Promise<IVoteOnQuestProposalResponse> {
+        throw new Error("Method not implemented.");
+    }
+
+    public voteOnQuest(questId: string, playerId: string, playerName: string, vote: number): Promise<IVoteOnQuestResponse> {
+        throw new Error("Method not implemented.");
+    }
+
+    // public getGameState(gameId: string, userId: string): Promise<IGame> {
+    //     const game: IGame = {
+    //         id: gameId,
+    //         creator: "Admin",
+    //         myName: "Adhish",
+    //         myRole: Role.MORDRED,
+    //         knowledge: ["Jack", "Kate"],
+    //         players: Array.from(this.userMap.keys()),
+    //         questConfigurations: [3, 4, 4, 5, 5],
+    //         questAttempts: [
+    //             {
+    //                 status: QuestAttemptStatus.FAILED,
+    //                 attemptNumber: 1,
+    //                 leader: "Adhish",
+    //                 members: [],
+    //                 questNumber: 1,
+    //                 results: [],
+    //                 votes: new Map<string, boolean>(),
+    //             },
+    //             {
+    //                 status: QuestAttemptStatus.PROPOSAL_REJECTED,
+    //                 attemptNumber: 1,
+    //                 leader: "Adhish",
+    //                 members: [],
+    //                 questNumber: 2,
+    //                 results: [],
+    //                 votes: new Map<string, boolean>(),
+    //             },
+    //             {
+    //                 status: QuestAttemptStatus.PROPOSAL_REJECTED,
+    //                 attemptNumber: 2,
+    //                 leader: "Adhish",
+    //                 members: [],
+    //                 questNumber: 2,
+    //                 results: [],
+    //                 votes: new Map<string, boolean>(),
+    //             },
+    //             {
+    //                 status: QuestAttemptStatus.PASSED,
+    //                 attemptNumber: 3,
+    //                 leader: "Adhish",
+    //                 members: [],
+    //                 questNumber: 2,
+    //                 results: [],
+    //                 votes: new Map<string, boolean>(),
+    //             },
+    //             {
+    //                 status: QuestAttemptStatus.PENDING_PROPOSAL_VOTES,
+    //                 attemptNumber: 1,
+    //                 leader: "Adhish",
+    //                 members: ["Jack", "Kate", "Harsh", "Kathrine"],
+    //                 questNumber: 3,
+    //                 results: [],
+    //                 votes: new Map<string, boolean>(),
+    //             },
+    //         ],
+    //         roleList: [
+    //             Role.ASSASSIN,
+    //             Role.LOYAL_SERVANT,
+    //             Role.MERLIN,
+    //             Role.MORGANA,
+    //             Role.PERCIVAL
+    //         ]
+    //     };
+    //     if (!this.userReverseMap.has(userId)) {
+    //         return delay<any>("Game not found", true);
+    //     }
+    //     return delay<IGame>(game);
+    // }
+
+    // public joinGame(gameId: string, userName: string): Promise<string> {
+    //     if (!this.gameOwnerMap.has(gameId)) {
+    //         return delay<any>("Invalid game id", true);
+    //     } else if (this.userMap.has(userName)) {
+    //         return delay<any>("user already registered", true);
+    //     } else if (this.userMap.size > 6) {
+    //         return delay<any>("too many players", true);
+    //     } else {
+    //         this.addUser(userName);
+    //     }
+    //     return delay<string>(generateId());
+    // }
 
     private addUser(userName: string) {
         let userId: string;

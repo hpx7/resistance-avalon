@@ -33,20 +33,10 @@ export enum HomeAction {
     CREATE_GAME = "create",
 }
 
-export interface ISettableValue {
-    value: string;
-    hasPreviouslyBeenSet: boolean;
-}
-
-export interface ISettableValue {
-    value: string;
-    hasPreviouslyBeenSet: boolean;
-}
-
 export interface IHomeState {
     homeAction: HomeAction;
-    userName: ISettableValue;
-    gameId: ISettableValue;
+    playerName: IAsyncLoaded<string, string>;
+    gameId: IAsyncLoaded<string, string>;
 }
 
 export enum QuestAttemptStatus {

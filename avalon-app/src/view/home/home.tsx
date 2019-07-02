@@ -18,6 +18,7 @@ import { handleStringChange } from "../../common/handleStringChange";
 import { GamePath } from "../../paths/game";
 import classNames from "classnames";
 import { History } from "history";
+import { AsyncLoadedValue } from "../../common/redoodle";
 
 interface IOwnProps {
     history: History;
@@ -128,12 +129,16 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
     }
 
     private renderUserNameInput() {
-        const { hasPreviouslyBeenSet, value } = this.props.userName;
+        const { playerName } = this.props;
         const { STRINGS } = UnconnectedHome;
+        const value = AsyncLoadedValue.getValueOrUndefined(playerName);
+        const helperText = AsyncLoadedValue.valueCheck(playerName, name => name.length === 0)
+            ? STRINGS.GAME_ID_HELPER_TEXT
+            : undefined;
         return (
             <FormGroup
                 key="user-name-input"
-                helperText={hasPreviouslyBeenSet && !this.hasValue(value) ? STRINGS.USER_NAME_HELPER_TEXT : undefined}
+                helperText={helperText}
                 label={STRINGS.USER_NAME_LABEL}
                 labelFor="name-input"
                 labelInfo={STRINGS.REQUIRED_TEXT}
@@ -151,12 +156,16 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
     }
 
     private renderGameIdInput() {
-        const { hasPreviouslyBeenSet, value } = this.props.gameId;
+        const { gameId } = this.props;
         const { STRINGS } = UnconnectedHome;
+        const value = AsyncLoadedValue.getValueOrUndefined(gameId);
+        const helperText = AsyncLoadedValue.valueCheck(gameId, id => id.length === 0)
+            ? STRINGS.GAME_ID_HELPER_TEXT
+            : undefined;
         return (
             <FormGroup
                 key="game-id-input"
-                helperText={hasPreviouslyBeenSet && !this.hasValue(value) ? STRINGS.GAME_ID_HELPER_TEXT : undefined}
+                helperText={helperText}
                 label={STRINGS.GAME_ID_LABEL}
                 labelFor="game-id-input"
                 labelInfo={STRINGS.REQUIRED_TEXT}
@@ -184,13 +193,13 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
     }
 
     private canJoinGame() {
-        const { gameId, userName } = this.props;
-        return this.hasValue(gameId.value) && this.hasValue(userName.value);
+        const { gameId, playerName } = this.props;
+        return AsyncLoadedValue.isReady(gameId) && AsyncLoadedValue.isReady(playerName);
     }
 
     private canCreateGame() {
-        const { gameId, userName } = this.props;
-        return this.hasValue(userName.value) && !this.hasValue(gameId.value);
+        const { gameId, playerName } = this.props;
+        return AsyncLoadedValue.isReady(playerName) && AsyncLoadedValue.isNotStartedLoading(gameId);
     }
 
     private shouldShowActionMatch(homeAction: HomeAction) {
@@ -198,39 +207,23 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
     }
 
     private tryToJoinGame = () => {
-        const {
-            gameId: {
-                value: gameId
-            },
-            userName: {
-                value: userName
-            },
-            history
-        } = this.props;
-        if (this.hasValue(gameId) && this.hasValue(userName)) {
-            this.services.gameService.joinGame(gameId, userName).then(maybeUserId => {
-                if (maybeUserId != null) {
-                    history.push(new GamePath(gameId, maybeUserId).getPathName());
+        const { gameId, playerName, history } = this.props;
+        if (AsyncLoadedValue.isReady(gameId) && AsyncLoadedValue.isReady(playerName)) {
+            this.services.gameService.joinGame(gameId.value, playerName.value).then(maybePlayerId => {
+                if (maybePlayerId != null && maybePlayerId.success) {
+                    history.push(new GamePath(gameId.value, maybePlayerId.playerId, playerName.value).getPathName());
                 }
             })
         }
     }
 
     private tryToCreateGame = () => {
-        const {
-            gameId: {
-                value: gameId
-            },
-            userName: {
-                value: userName
-            },
-            history
-        } = this.props;
-        if (!this.hasValue(gameId) && this.hasValue(userName)) {
-            this.services.gameService.createGame(userName).then(maybeCreateGame => {
+        const { gameId, playerName, history } = this.props;
+        if (AsyncLoadedValue.isNotStartedLoading(gameId) && AsyncLoadedValue.isReady(playerName)) {
+            this.services.gameService.createGame(playerName.value).then(maybeCreateGame => {
                 if (maybeCreateGame != null) {
-                    const { gameId, userId } = maybeCreateGame;
-                    history.push(new GamePath(gameId, userId).getPathName());
+                    const { gameId, playerId } = maybeCreateGame;
+                    history.push(new GamePath(gameId, playerId, playerName.value).getPathName());
                 }
             })
         }

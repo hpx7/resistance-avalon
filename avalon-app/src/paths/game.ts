@@ -3,18 +3,19 @@ import { IPath } from "../common/path";
 
 export interface IGamePathParams {
     gameId: string;
-    userId: string;
+    playerId: string;
+    playerName: string;
 }
 
 export class GamePath extends IPath {
-    public static readonly TEMPLATE = `/game/:gameId/:userId`;
+    public static readonly TEMPLATE = `/game/:gameId/:playerId/:playerName`;
 
     public static fromRoute(routeProps: RouteComponentProps<IGamePathParams>) {
-        const { gameId, userId } = routeProps.match.params;
-        return new GamePath(gameId, userId);
+        const { gameId, playerId, playerName } = routeProps.match.params;
+        return new GamePath(gameId, playerId, playerName);
     }
 
-    constructor(private gameId: string, private userId: string) {
+    constructor(private gameId: string, private playerId: string, private playerName: string) {
         super();
     }
 
@@ -23,7 +24,7 @@ export class GamePath extends IPath {
     }
 
     public getPathName() {
-        return `/game/${this.gameId}/${this.userId}`;
+        return `/game/${this.gameId}/${this.playerId}/${this.playerName}`;
     }
 
     public getTitle() {
@@ -37,7 +38,8 @@ export class GamePath extends IPath {
     public getPathParams() {
         return {
             gameId: this.gameId,
-            userId: this.userId,
+            playerId: this.playerId,
+            playerName: this.playerName,
         };
     }
 }
