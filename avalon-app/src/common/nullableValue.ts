@@ -1,5 +1,4 @@
 export class NullableValue<T> {
-
     public static isNotNullish<T>(value: T | null | undefined): value is T {
         return value != null;
     }

@@ -3,6 +3,7 @@ import { IApplicationState } from "../state/index";
 import { SetGameId, SetHomeAction, SetPlayerName, SetGame, SetGameAction } from "./actions";
 import { IGameState, IHomeState, IGame, GameAction, HomeAction } from "./types";
 import { TypedAsyncLoadedReducer, AsyncLoadedValue } from "../common/redoodle";
+import { TernaryValue } from "../common/ternary";
 
 const gameReducer = TypedAsyncLoadedReducer.builder<IGame, string>()
     .withAsyncLoadHandler(SetGame, game => game, error => error)
@@ -19,11 +20,7 @@ const gameStateReducer = combineReducers<IGameState>({
     gameAction: gameActionReducer
 });
 
-const homeActionReducer = TypedReducer.builder<HomeAction>()
-    .withHandler(SetHomeAction.TYPE, (state, homeAction) => {
-        return state === homeAction ? state : homeAction;
-    })
-    .build();
+const homeActionReducer = TypedReducer.builder<HomeAction>().build();
 
 const playerNameReducer = TypedAsyncLoadedReducer.builder<string, string>()
     .withAsyncLoadHandler(SetPlayerName, playerName => playerName, error => error)
@@ -40,17 +37,13 @@ const individualHomeStateReducer = combineReducers<IHomeState>({
 });
 
 const combinedHomeStateReducer = TypedReducer.builder<IHomeState>()
-    .withHandler(SetHomeAction.TYPE, (state, homeAction) => {
-        if (state.homeAction === homeAction) {
-            return state;
-        } else {
-            return {
-                homeAction,
-                playerName: AsyncLoadedValue.asyncNotStartedLoading(),
-                gameId: AsyncLoadedValue.asyncNotStartedLoading(),
-            };
-        }
-    })
+    .withHandler(SetHomeAction.TYPE, (state, homeAction) => TernaryValue.of(state.homeAction === homeAction)
+        .ifTrue(state)
+        .ifFalse({
+            homeAction,
+            playerName: AsyncLoadedValue.asyncNotStartedLoading(),
+            gameId: AsyncLoadedValue.asyncNotStartedLoading(),
+        }).get())
     .build();
 
 const homeStateReducer = composeReducers<IHomeState>(individualHomeStateReducer, combinedHomeStateReducer)

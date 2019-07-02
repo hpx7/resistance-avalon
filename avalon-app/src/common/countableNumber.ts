@@ -1,4 +1,5 @@
 import { NullableValue } from "./nullableValue";
+
 export class CountableValue<T> {
     public static of<T>(value: T[]): CountableValue<T> {
         return value.length === 0 ? CountableValue.EMPTY_VALUE : new CountableValue<T>(value);

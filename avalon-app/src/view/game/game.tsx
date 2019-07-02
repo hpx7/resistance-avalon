@@ -30,6 +30,7 @@ import { isEvilRole } from "../../common/role";
 import { CountableValue } from "../../common/countableNumber";
 import { AsyncLoadedValue } from "../../common/redoodle";
 import { NullableValue } from "../../common/nullableValue";
+import { TernaryValue } from "../../common/ternary";
 
 interface IOwnProps {
     history: History;
@@ -181,16 +182,20 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
     private renderQuestHistory(game: IGame) {
         const { questConfigurations, questAttempts } = game;
         return NullableValue.of(questConfigurations)
-            .map(presentQuestConfigurations => {
-                return presentQuestConfigurations.map((questConfiguration, idx) => {
-                    return (
-                        <div key={`quest-${idx}`}>
-                            <span className={styles.questNumber}>{questConfiguration}</span>
-                            <Icon {...this.getQuestIconProps(questAttempts, idx + 1)} />
-                        </div>
-                    );
-                })
-            }).getOrUndefined();
+            .map<JSX.Element | string>(presentQuestConfigurations => {
+                return (
+                    <div>
+                        {presentQuestConfigurations.map((questConfiguration, idx) => {
+                            return (
+                                <div key={`quest-${idx}`}>
+                                    <span className={styles.questNumber}>{questConfiguration}</span>
+                                    <Icon {...this.getQuestIconProps(questAttempts, idx + 1)} />
+                                </div>
+                            );
+                        })}
+                    </div>
+                );
+            }).getOrDefault(this.renderPendingProposal(game));
     }
 
     private getQuestIconProps(questAttempts: IQuestAttempt[], questNumber: number): IIconProps {
@@ -323,10 +328,10 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
     private renderPendingProposal(game: IGame) {
         const { creator, myName } = game;
         const { STRINGS } = UnconnectedGame;
-        if (creator === myName) {
-            return <Button text={STRINGS.START_GAME}/>
-        }
-        return `Waiting for ${creator} to start the game`;
+        return TernaryValue.of(creator === myName)
+            .ifTrue(<Button text={STRINGS.START_GAME}/>)
+            .ifFalse(`Waiting for ${creator} to start the game`)
+            .get();
     }
 
     private renderGameSkeleton() {

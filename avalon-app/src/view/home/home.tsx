@@ -64,20 +64,20 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
                     transitionDuration={400}
                     isOpen={isJoinGameAction}
                 >
-                    {this.maybeRenderJoinGame()}
+                    {this.renderJoinGame()}
                 </Collapse>
                 <Collapse
                     className={classNames({[styles.fadeCollapse]: isCreateGameAction})}
                     transitionDuration={400}
                     isOpen={isCreateGameAction}
                 >
-                    {this.maybeRenderCreateGame()}
+                    {this.renderCreateGame()}
                 </Collapse>
             </Card>
         );
     }
 
-    private maybeRenderJoinGame() {
+    private renderJoinGame() {
         const { STRINGS } = UnconnectedHome;
         return [
             <H2 key="create-game-title">{STRINGS.JOIN_GAME_TITLE}</H2>,
@@ -103,7 +103,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
         ]
     }
 
-    private maybeRenderCreateGame() {
+    private renderCreateGame() {
         const { STRINGS } = UnconnectedHome;
         return [
             <H2 key="create-game-title">{STRINGS.CREATE_GAME_TITLE}</H2>,
@@ -131,7 +131,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
     private renderUserNameInput() {
         const { playerName } = this.props;
         const { STRINGS } = UnconnectedHome;
-        const value = AsyncLoadedValue.getValueOrUndefined(playerName);
+        const value = AsyncLoadedValue.getValueOrDefault(playerName, "");
         const helperText = AsyncLoadedValue.valueCheck(playerName, name => name.length === 0)
             ? STRINGS.GAME_ID_HELPER_TEXT
             : undefined;
@@ -158,7 +158,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
     private renderGameIdInput() {
         const { gameId } = this.props;
         const { STRINGS } = UnconnectedHome;
-        const value = AsyncLoadedValue.getValueOrUndefined(gameId);
+        const value = AsyncLoadedValue.getValueOrDefault(gameId, "");
         const helperText = AsyncLoadedValue.valueCheck(gameId, id => id.length === 0)
             ? STRINGS.GAME_ID_HELPER_TEXT
             : undefined;

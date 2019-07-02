@@ -154,7 +154,7 @@ export class AsyncLoadedValue {
     public static valueCheck<V, E>(
         async: IAsyncLoaded<V, E>,
         check: (value: V) => boolean,
-        ifNoValue: boolean = true): boolean {
+        ifNoValue: boolean = false): boolean {
         return this.isReady(async) ? check(async.value) : ifNoValue;
     }
 }
