@@ -28,6 +28,7 @@ import { assertNever } from "../../common/assertNever";
 import { isEvilRole } from "../../common/role";
 import { CountableValue } from "../../common/countableNumber";
 import { AsyncLoadedValue } from "../../common/redoodle";
+import { NullableValue } from "../../common/nullableValue";
 
 interface IOwnProps {
     history: History;
@@ -149,7 +150,9 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                     return (
                         <div>
                             <H2 className={styles.gameHeader}>{STRINGS.ROLES}</H2>
-                            {this.renderRoles(game.value.roleList)}
+                            {NullableValue.of(game.value.roles)
+                                .map(this.renderRoles)
+                                .getOrUndefined()}
                         </div>
                     );
                 case GameAction.VIEW_PLAYERS:
@@ -177,14 +180,17 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
 
     private renderQuestHistory(game: IGame) {
         const { questConfigurations, questAttempts } = game;
-        return questConfigurations.map((questConfiguration, idx) => {
-            return (
-                <div key={`quest-${idx}`}>
-                    <span className={styles.questNumber}>{questConfiguration}</span>
-                    <Icon {...this.getQuestIconProps(questAttempts, idx + 1)} />
-                </div>
-            );
-        })
+        return NullableValue.of(questConfigurations)
+            .map(presentQuestConfigurations => {
+                return presentQuestConfigurations.map((questConfiguration, idx) => {
+                    return (
+                        <div key={`quest-${idx}`}>
+                            <span className={styles.questNumber}>{questConfiguration}</span>
+                            <Icon {...this.getQuestIconProps(questAttempts, idx + 1)} />
+                        </div>
+                    );
+                })
+            }).getOrUndefined();
     }
 
     private getQuestIconProps(questAttempts: IQuestAttempt[], questNumber: number): IIconProps {
@@ -302,11 +308,16 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         }
     }
 
-    private maybeRenderFailButton(myRole: Role) {
+    private maybeRenderFailButton(myRole: Role | null | undefined) {
         const { STRINGS } = UnconnectedGame;
-        if (isEvilRole(myRole)) {
-            return <Button intent={Intent.DANGER} text={STRINGS.FAIL}/>;
-        }
+        return NullableValue.of(myRole)
+            .map(role => {
+                if (isEvilRole(role)) {
+                    return <Button intent={Intent.DANGER} text={STRINGS.FAIL}/>;
+                }
+                return undefined;
+            }).getOrUndefined();
+
     }
 
     private renderPendingProposal(game: IGame) {
@@ -332,8 +343,11 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         })
     }
 
-    private renderRoles(roleList: string[]) {
-        return roleList.map((role, idx) => <div key={`${role}-${idx}`} className={styles.role}>{role}</div>)
+    private renderRoles = (roles: Map<string, boolean>) => {
+        return Object.keys(roles).map((role, idx) => {
+            const classes = classNames(styles.role, roles.get(role) ? styles.good : styles.bad);
+            return <div key={`${role}-${idx}`} className={classes}>{role}</div>
+        });
     }
 
     private redirectToHome = () => {

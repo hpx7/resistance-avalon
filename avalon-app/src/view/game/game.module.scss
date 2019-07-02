@@ -43,6 +43,14 @@ $logo-size: 3 * $pt-grid-size;
     &:not(:last-child) {
         border-bottom: 1px solid $pt-dark-divider-white;
     }
+
+    &.good {
+        color: $green5;
+    }
+
+    &.bad {
+        color: $red5;
+    }
 }
 
 .questHistory {

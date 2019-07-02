@@ -33,11 +33,11 @@ export class Player extends React.PureComponent<IProps> {
             showKnowledge,
             showMyself,
         } = this.props;
-        const knownPlayers = new Set<string>(knowledge);
-        const status = this.renderStatusIcon(myRole);
+        const knownPlayers = new Set<string>(knowledge.players);
+        const status = this.maybeRenderStatusIcon(myRole);
         const content = [
             <div key="player-name">{player}</div>,
-            (showMyself && player === myName)
+            (showMyself && player === myName && NullableValue.isNotNullish(myRole))
                 ? <div key="your-role" className={styles.you}>(You are {capitalize(myRole)})</div>
                 : undefined,
         ].filter(NullableValue.isNotNullish);
@@ -53,7 +53,10 @@ export class Player extends React.PureComponent<IProps> {
         )
     }
 
-    private renderStatusIcon(role: Role) {
+    private maybeRenderStatusIcon(role: Role | null | undefined) {
+        if (NullableValue.isNullish(role)) {
+            return null;
+        }
         const { STRINGS } = Player;
         switch (role) {
             case Role.ASSASSIN:
