@@ -58,16 +58,21 @@ export interface IQuestAttempt {
     votes: Map<string, boolean>;
 }
 
+export interface IKnowledge {
+    players: string[];
+    roles: Map<string, boolean>;
+}
+
 export interface IGame {
     id: string;
     creator: string;
     myName: string;
-    myRole: Role;
-    knowledge: string[];
+    myRole?: Role | null;
+    knowledge: IKnowledge;
     players: string[];
-    questConfigurations: number[];
+    questConfigurations?: number[] | null;
     questAttempts: IQuestAttempt[];
-    roleList: Role[];
+    roles: Map<string, boolean>;
 }
 
 export interface ICreatedGame {
