@@ -48,6 +48,13 @@ export enum QuestAttemptStatus {
     FAILED = "failed"
 }
 
+export enum GameStatus {
+    NOT_STARTED = "not_started",
+    IN_PROGRESS = "in_progress",
+    GOOD_WON = "good_won",
+    EVIL_WON = "evil_won",
+}
+
 export interface IQuestAttempt {
     status: QuestAttemptStatus;
     attemptNumber: number;
@@ -73,6 +80,7 @@ export interface IGame {
     questConfigurations?: number[] | null;
     questAttempts: IQuestAttempt[];
     roles: Map<string, boolean>;
+    status: GameStatus;
 }
 
 export interface ICreatedGame {

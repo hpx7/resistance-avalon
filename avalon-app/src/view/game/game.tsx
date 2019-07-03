@@ -13,6 +13,7 @@ import {
     IIconProps,
     Intent,
     NonIdealState,
+    Callout,
 } from "@blueprintjs/core";
 import styles from "./game.module.scss";
 import { ContextType, getServices } from "../../common/contextProvider";
@@ -21,7 +22,7 @@ import { IconNames, IconName } from "@blueprintjs/icons";
 import { IApplicationState, IGameState } from "../../state";
 import { connect } from "react-redux";
 import { History } from "history";
-import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, Role } from "../../state/types";
+import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, Role, GameStatus } from "../../state/types";
 import { HomePath } from "../../paths/home";
 import { times, constant, random, maxBy } from "lodash-es";
 import { Player } from "./player";
@@ -30,7 +31,7 @@ import { isEvilRole } from "../../common/role";
 import { CountableValue } from "../../common/countableNumber";
 import { AsyncLoadedValue } from "../../common/redoodle";
 import { NullableValue } from "../../common/nullableValue";
-import { TernaryValue } from "../../common/ternary";
+import { GameConfiguration } from "./gameConfiguration";
 
 interface IOwnProps {
     history: History;
@@ -47,6 +48,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
     public static contextTypes = ContextType;
     private static STRINGS = {
         AVALON: "Avalon",
+        WAITING_FOR_PLAYERS: "Waiting for players to join",
         PLAYERS: "Players",
         QUESTS: "Quests",
         ROLES: "Roles",
@@ -70,6 +72,8 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         QUEST_FAILED_TITLE: "Quest failed",
         VIEW_ROLES_TITLE: "View roles",
         VIEW_PLAYERS_TITLE: "View players",
+        GOOD_WON: "Good won!",
+        EVIL_WON: "Evil won!",
     }
     private services = getServices(this.context);
     private interval: number | undefined;
@@ -108,16 +112,12 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
     }
 
     public render() {
-        const { STRINGS } = UnconnectedGame;
         return (
             <>
                 <Navbar className={styles.navbar}>
                     <NavbarGroup>
                         <NavbarHeading onClick={this.redirectToHome} className={styles.logo} />
-                        <NavbarDivider />
-                        {this.renderNavigationButton(GameAction.VIEW_ROLES, STRINGS.ROLES, IconNames.EYE_OPEN)}
-                        {this.renderNavigationButton(GameAction.VIEW_PLAYERS, STRINGS.PLAYERS, IconNames.PEOPLE)}
-                        {this.renderNavigationButton(GameAction.VIEW_QUESTS, STRINGS.QUESTS, IconNames.PATH_SEARCH)}
+                        {this.maybeRenderNavigationButtons()}
                     </NavbarGroup>
                 </Navbar>
                 <div className={styles.content}>
@@ -129,53 +129,104 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         );
     }
 
+    private maybeRenderNavigationButtons() {
+        const { STRINGS } = UnconnectedGame;
+        const { game } = this.props;
+        if (!AsyncLoadedValue.isReady(game) || game.value.status !== GameStatus.IN_PROGRESS) {
+            return undefined;
+        }
+        return (
+            <>
+                <NavbarDivider />
+                {this.renderNavigationButton(GameAction.VIEW_ROLES, STRINGS.ROLES, IconNames.EYE_OPEN)}
+                {this.renderNavigationButton(GameAction.VIEW_PLAYERS, STRINGS.PLAYERS, IconNames.PEOPLE)}
+                {this.renderNavigationButton(GameAction.VIEW_QUESTS, STRINGS.QUESTS, IconNames.PATH_SEARCH)}
+            </>
+        )
+    }
+
     private renderNavigationButton(targetGameAction: GameAction, text: string, icon: IconName) {
         const { gameAction } = this.props;
         return (
             <Button
-            active={gameAction === targetGameAction}
-            className={Classes.MINIMAL}
-            icon={icon}
-            text={text}
-            onClick={this.setAction(targetGameAction)}
-        />
+                active={gameAction === targetGameAction}
+                className={Classes.MINIMAL}
+                icon={icon}
+                text={text}
+                onClick={this.setAction(targetGameAction)}
+            />
         );
     }
 
     private renderContent() {
-        const { game, gameAction } = this.props;
-        const { STRINGS } = UnconnectedGame;
+        const { game, playerId } = this.props;
         if (!AsyncLoadedValue.isReady(game)) {
             return this.renderGameSkeleton();
-        } else {
-            switch (gameAction) {
-                case GameAction.VIEW_ROLES:
-                    return (
-                        <div>
-                            <H2 className={styles.gameHeader}>{STRINGS.ROLES}</H2>
-                            {this.renderRoles(game.value.roles)}
-                        </div>
-                    );
-                case GameAction.VIEW_PLAYERS:
-                    return (
-                        <div>
-                            <H2 className={styles.gameHeader}>{STRINGS.PLAYERS}</H2>
-                            {this.renderPlayers(game.value)}
-                        </div>
-                    );
-                case GameAction.VIEW_QUESTS:
-                    return (
-                        <div>
-                            <H2 className={styles.gameHeader}>{STRINGS.QUEST_HISTORY}</H2>
-                            <div className={styles.questHistory}>{this.renderQuestHistory(game.value)}</div>
-                            <H2 className={styles.gameHeader}>{STRINGS.CURRENT_QUEST}</H2>
-                            {this.renderCurrentQuest(game.value)}
-                            {this.maybeRenderCurrentQuestActions(game.value)}
-                        </div>
-                    );
-                default:
-                    return assertNever(gameAction);
-            }
+        }
+        const { status, creator, myName } = game.value;
+        const { STRINGS } = UnconnectedGame;
+        switch (status) {
+            case GameStatus.NOT_STARTED:
+                if (creator === myName) {
+                    return <GameConfiguration game={game.value} playerId={playerId} />
+                }
+                return (
+                    <div>
+                        <H2 className={styles.gameHeader}>{STRINGS.WAITING_FOR_PLAYERS}</H2>
+                        {this.renderPlayers(game.value)}
+                    </div>
+                )
+            case GameStatus.IN_PROGRESS:
+                return this.renderInProgressGame(game.value);
+            case GameStatus.GOOD_WON:
+                return (
+                    <Callout
+                        icon={IconNames.THUMBS_UP}
+                        title={STRINGS.GOOD_WON}
+                        intent={Intent.SUCCESS}
+                    />
+                )
+            case GameStatus.EVIL_WON:
+                return (
+                    <Callout
+                        icon={IconNames.THUMBS_UP}
+                        title={STRINGS.EVIL_WON}
+                        intent={Intent.DANGER}
+                    />
+                )
+        }
+    }
+
+    private renderInProgressGame(game: IGame) {
+        const { gameAction } = this.props;
+        const { STRINGS } = UnconnectedGame;
+        switch (gameAction) {
+            case GameAction.VIEW_ROLES:
+                return (
+                    <div>
+                        <H2 className={styles.gameHeader}>{STRINGS.ROLES}</H2>
+                        {this.renderRoles(game.roles)}
+                    </div>
+                );
+            case GameAction.VIEW_PLAYERS:
+                return (
+                    <div>
+                        <H2 className={styles.gameHeader}>{STRINGS.PLAYERS}</H2>
+                        {this.renderPlayers(game)}
+                    </div>
+                );
+            case GameAction.VIEW_QUESTS:
+                return (
+                    <div>
+                        <H2 className={styles.gameHeader}>{STRINGS.QUEST_HISTORY}</H2>
+                        <div className={styles.questHistory}>{this.renderQuestHistory(game)}</div>
+                        <H2 className={styles.gameHeader}>{STRINGS.CURRENT_QUEST}</H2>
+                        {this.renderCurrentQuest(game)}
+                        {this.maybeRenderCurrentQuestActions(game)}
+                    </div>
+                );
+            default:
+                return assertNever(gameAction);
         }
     }
 
@@ -326,12 +377,8 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
     }
 
     private renderPendingProposal(game: IGame) {
-        const { creator, myName } = game;
-        const { STRINGS } = UnconnectedGame;
-        return TernaryValue.of(creator === myName)
-            .ifTrue(<Button text={STRINGS.START_GAME}/>)
-            .ifFalse(`Waiting for ${creator} to start the game`)
-            .get();
+        const { creator } = game;
+        return `Waiting for ${creator} to start the game`;
     }
 
     private renderGameSkeleton() {
