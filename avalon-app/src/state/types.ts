@@ -56,13 +56,18 @@ export enum GameStatus {
 }
 
 export interface IQuestAttempt {
-    status: QuestAttemptStatus;
+    id: string;
+    roundNumber: number;
     attemptNumber: number;
+    size: number;
     leader: string;
     members: string[];
-    questNumber: number;
-    results: boolean[];
-    votes: Map<string, boolean>;
+    myVote: number;
+    votes: Map<string, number>;
+    remainingVotes: number;
+    results: number[];
+    remainingResults: number;
+    status: QuestAttemptStatus;
 }
 
 export interface IKnowledge {
