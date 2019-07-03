@@ -40,10 +40,10 @@ export interface IHomeState {
 }
 
 export enum QuestAttemptStatus {
-    PENDING_PROPOSAL = "pending_proposal",
-    PENDING_PROPOSAL_VOTES  = "pending_proposal_votes",
+    PENDING_PROPOSAL = "proposing_quest",
+    PENDING_PROPOSAL_VOTES  = "voting_for_proposal",
     PROPOSAL_REJECTED = "proposal_rejected",
-    PENDING_QUEST_RESULTS = "pending_quest_results",
+    PENDING_QUEST_RESULTS = "voting_in_quest",
     PASSED = "passed",
     FAILED = "failed"
 }
@@ -56,13 +56,18 @@ export enum GameStatus {
 }
 
 export interface IQuestAttempt {
-    status: QuestAttemptStatus;
+    id: string;
+    roundNumber: number;
     attemptNumber: number;
+    size: number;
     leader: string;
     members: string[];
-    questNumber: number;
-    results: boolean[];
-    votes: Map<string, boolean>;
+    myVote: number;
+    votes: Map<string, number>;
+    remainingVotes: number;
+    results: number[];
+    remainingResults: number;
+    status: QuestAttemptStatus;
 }
 
 export interface IKnowledge {
