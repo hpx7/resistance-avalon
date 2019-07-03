@@ -8,7 +8,7 @@ import os
 app = flask.Flask(__name__, static_folder='avalon-app/build/static', template_folder='avalon-app/build')
 
 # database
-games = pymongo.MongoClient().db.games
+games = pymongo.MongoClient(os.getenv('MONGODB_URI')).db.games
 
 # which roles have knowledge of which other roles
 role_knowledge = {
