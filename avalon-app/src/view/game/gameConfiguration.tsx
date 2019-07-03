@@ -21,6 +21,7 @@ import { assertNever } from "../../common/assertNever";
 interface IGameConfigurationProps {
     game: IGame;
     playerId: string;
+    gameId: string;
 }
 
 enum ConfigurationTab {
@@ -174,10 +175,10 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
     private startGame = () => {
         const {
             game: {
-                id: gameId,
                 myName,
                 players,
             },
+            gameId,
             playerId,
         } = this.props;
         if (this.canStartGame()) {

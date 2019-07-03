@@ -63,7 +63,7 @@ export interface IQuestAttempt {
     leader: string;
     members: string[];
     myVote: number;
-    votes: Map<string, number>;
+    votes: { [key: string]: number };
     remainingVotes: number;
     results: number[];
     remainingResults: number;
@@ -72,7 +72,7 @@ export interface IQuestAttempt {
 
 export interface IKnowledge {
     players: string[];
-    roles: Map<string, boolean>;
+    roles: { [key: string]: boolean };
 }
 
 export interface IGame {
@@ -84,7 +84,7 @@ export interface IGame {
     players: string[];
     questConfigurations?: number[] | null;
     questAttempts: IQuestAttempt[];
-    roles: Map<string, boolean>;
+    roles: { [key: string]: boolean };
     status: GameStatus;
 }
 

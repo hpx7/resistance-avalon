@@ -159,7 +159,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
     }
 
     private renderContent() {
-        const { game, playerId } = this.props;
+        const { game, playerId, gameId } = this.props;
         if (!AsyncLoadedValue.isReady(game)) {
             return this.renderGameSkeleton();
         }
@@ -168,7 +168,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         switch (status) {
             case GameStatus.NOT_STARTED:
                 if (creator === myName) {
-                    return <GameConfiguration game={game.value} playerId={playerId} />
+                    return <GameConfiguration game={game.value} playerId={playerId} gameId={gameId} />
                 }
                 return (
                     <div>
@@ -235,23 +235,23 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         return NullableValue.of(questConfigurations)
             .map<JSX.Element | string>(presentQuestConfigurations => {
                 return (
-                    <div>
+                    <>
                         {presentQuestConfigurations.map((questConfiguration, idx) => {
                             return (
                                 <div key={`quest-${idx}`}>
-                                    <span className={styles.questNumber}>{questConfiguration}</span>
+                                    <span className={styles.roundNumber}>{questConfiguration}</span>
                                     <Icon {...this.getQuestIconProps(questAttempts, idx + 1)} />
                                 </div>
                             );
                         })}
-                    </div>
+                    </>
                 );
             }).getOrDefault(this.renderPendingProposal(game));
     }
 
-    private getQuestIconProps(questAttempts: IQuestAttempt[], questNumber: number): IIconProps {
+    private getQuestIconProps(questAttempts: IQuestAttempt[], roundNumber: number): IIconProps {
         const relevantQuest = maxBy(questAttempts.filter(
-            questAttempt => questAttempt.questNumber === questNumber),
+            questAttempt => questAttempt.roundNumber === roundNumber),
             questAttempt => questAttempt.attemptNumber);
         if (relevantQuest == null) {
             return { icon: IconNames.CIRCLE, intent: Intent.NONE };
@@ -282,7 +282,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                 const {
                     status,
                     attemptNumber,
-                    questNumber,
+                    roundNumber,
                     leader,
                     members,
                 } = latestQuestAttempt;
@@ -292,7 +292,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                 return (
                     <div>
                         <div className={styles.questMetadata}>
-                            <div>Quest {questNumber} - Attempt {attemptNumber}</div>
+                            <div>Quest {roundNumber} - Attempt {attemptNumber}</div>
                             <div>Leader: {leader}</div>
                             <div>Participants:</div>
                             <div>
@@ -320,14 +320,14 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
     }
 
     private renderCurrentQuestActions(game: IGame, questAttempt: IQuestAttempt) {
-        const { status, attemptNumber, questNumber, votes } = questAttempt;
+        const { status, attemptNumber, roundNumber, votes } = questAttempt;
         const { myName, myRole } = game;
         const { STRINGS } = UnconnectedGame;
         switch (status) {
             case QuestAttemptStatus.PENDING_PROPOSAL:
                 return this.renderPendingProposal(game);
             case QuestAttemptStatus.PENDING_PROPOSAL_VOTES:
-                if (votes.has(myName)) {
+                if (votes[myName]) {
                     return STRINGS.WAITING_FOR_OTHER_VOTES;
                 } else {
                     return (
@@ -341,9 +341,9 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                     )
                 }
             case QuestAttemptStatus.PROPOSAL_REJECTED:
-                return `Quest ${questNumber} proposal ${attemptNumber} was rejected.`;
+                return `Quest ${roundNumber} proposal ${attemptNumber} was rejected.`;
             case QuestAttemptStatus.PENDING_QUEST_RESULTS:
-                if (votes.has(myName)) {
+                if (myName in votes) {
                     return STRINGS.WAITING_FOR_QUEST_RESULTS;
                 } else {
                     return (
@@ -358,7 +358,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                 }
             case QuestAttemptStatus.PASSED:
             case QuestAttemptStatus.FAILED:
-                return `Quest number ${questNumber} ${status}!`;
+                return `Quest number ${roundNumber} ${status}!`;
             default:
                 return assertNever(status);
         }
@@ -395,11 +395,11 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         })
     }
 
-    private renderRoles = (roles: Map<string, boolean>) => {
+    private renderRoles = (roles: Record<string, boolean>) => {
         const { STRINGS } = UnconnectedGame;
         return CountableValue.of(Object.keys(roles))
             .map((role, idx) => {
-                const classes = classNames(styles.role, roles.get(role) ? styles.good : styles.bad);
+                const classes = classNames(styles.role, roles[role] ? styles.good : styles.bad);
                 return <div key={`${role}-${idx}`} className={classes}>{role}</div>
             }).getValueOrDefaultIfEmpty(
                 <NonIdealState
