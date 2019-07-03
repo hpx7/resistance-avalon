@@ -89,8 +89,8 @@ def get_state(game_id, player_id):
     'myName': player['name'],
     'myRole': player['role'],
     'knowledge': get_player_knowledge(game, player),
-    'questAttempts': [sanitize_quest(game, quest, player) for quest in game['quests']]
-    'status': get_game_status(game),
+    'questAttempts': [sanitize_quest(game, quest, player) for quest in game['quests']],
+    'status': get_game_status(game)
   })
 
 @app.route('/api/propose/<quest_id>/<player_id>/<player_name>', methods=['POST'])
@@ -202,12 +202,6 @@ def get_player_knowledge(game, player):
     'roles': {role: role not in evil_roles for role in extract('role', known_players)}
   }
 
-def get_game_status(game):
-  if len(game['quests']) == 0:
-    return 'not_started'
-  else:
-    return 'finished' if reduce((lambda x, y: x if x['roundNumber'] > y['roundNumber'] else y), game['quests'])['roundNumber'] == len(game['questConfigurations']) else 'in_progress'
-
 def sanitize_quest(game, quest, player):
   new_quest = quest.copy()
   new_quest['votes'] = sorted(quest['votes'], key = lambda vote: vote['player']) if quest['remainingVotes'] == 0 else []
@@ -217,6 +211,15 @@ def sanitize_quest(game, quest, player):
   del new_quest['voteStatus']
   del new_quest['failures']
   return new_quest
+
+def get_game_status(game):
+  if game['quests'] == []:
+    return 'not_started'
+  if sum(1 for quest in game['quests'] if get_quest_status(game, quest) == 'passed') > 2:
+    return 'good_won'
+  if sum(1 for quest in game['quests'] if get_quest_status(game, quest) == 'failed') > 2:
+    return 'evil_won'
+  return 'in_progress'
 
 def get_next_leader(game, quest):
   players = game['players']
