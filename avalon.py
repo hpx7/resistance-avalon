@@ -5,7 +5,7 @@ import flask
 import json
 import os
 
-app = flask.Flask(__name__, static_folder='avalon-app/build/static', template_folder='avalon-app/build')
+app = flask.Flask(__name__)
 
 # database
 games = pymongo.MongoClient(os.getenv('MONGODB_URI')).db.games
@@ -167,11 +167,6 @@ def vote_in_quest(quest_id, player_id, player_name, vote):
     {'$push': {'quests': next_quest}}
   )
   return flask.jsonify({'success': True})
-
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve(path):
-  return flask.render_template('index.html')
 
 def random_id():
   return ''.join(random.choices(string.ascii_letters + string.digits, k = 6))
