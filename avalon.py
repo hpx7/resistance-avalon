@@ -8,7 +8,7 @@ import os
 app = flask.Flask(__name__)
 
 # database
-games = pymongo.MongoClient(os.getenv('MONGODB_URI')).db.games
+games = pymongo.MongoClient(os.getenv('MONGODB_URI')).get_database().games
 
 # which roles have knowledge of which other roles
 role_knowledge = {
