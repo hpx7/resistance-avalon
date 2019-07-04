@@ -81,7 +81,7 @@ def get_state(game_id, player_id):
   if game is None:
     return flask.jsonify({'success': False})
   player = next(player for player in game['players'] if player['id'] == player_id)
-  return flask.jsonify({
+  response = flask.jsonify({
     'creator': game['creator'],
     'players': extract('name', game['players']),
     'roles': {role: role not in evil_roles for role in extract('role', game['players'])},
@@ -92,6 +92,8 @@ def get_state(game_id, player_id):
     'questAttempts': [sanitize_quest(game, quest, player) for quest in game['quests']],
     'status': get_game_status(game)
   })
+  response.add_etag()
+  return response.make_conditional(flask.request)
 
 @app.route('/api/propose/<quest_id>/<player_id>/<player_name>', methods=['POST'])
 def propose_quest(quest_id, player_id, player_name):
