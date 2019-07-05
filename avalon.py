@@ -1,6 +1,5 @@
 import pymongo
 import random
-import string
 import flask
 import json
 import os
@@ -171,7 +170,7 @@ def vote_in_quest(quest_id, player_id, player_name, vote):
   return flask.jsonify({'success': True})
 
 def random_id():
-  return ''.join(random.choices(string.ascii_letters + string.digits, k = 6))
+  return ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~', k = 6))
 
 def extract(key, objects):
   return [o[key] for o in objects if o.get(key)]
