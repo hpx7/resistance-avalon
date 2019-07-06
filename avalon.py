@@ -1,3 +1,4 @@
+import mongocache
 import pymongo
 import random
 import flask
@@ -8,6 +9,9 @@ app = flask.Flask(__name__)
 
 # database
 games = pymongo.MongoClient(os.getenv('MONGODB_URI')).get_database().games
+
+# cache
+games_cache = mongocache.CollectionCache(games, 'id')
 
 # which roles have knowledge of which other roles
 role_knowledge = {
@@ -76,8 +80,8 @@ def start_game(game_id, player_id, player_name):
 
 @app.route('/api/state/<game_id>/<player_id>')
 def get_state(game_id, player_id):
-  game = games.find_one({'id': game_id, 'players.id': player_id})
-  if game is None:
+  game = games_cache.get_doc(game_id)
+  if game is None or not any(player['id'] == player_id for player in game['players']):
     return flask.jsonify({'success': False})
   player = next(player for player in game['players'] if player['id'] == player_id)
   response = flask.jsonify({
