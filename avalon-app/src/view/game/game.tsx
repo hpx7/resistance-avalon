@@ -27,7 +27,7 @@ import { HomePath } from "../../paths/home";
 import { times, constant, random, maxBy } from "lodash-es";
 import { PlayerList } from "./playerList";
 import { assertNever } from "../../common/assertNever";
-import { CountableValue } from "../../common/countableNumber";
+import { CountableValue } from "../../common/countableValue";
 import { AsyncLoadedValue } from "../../common/redoodle";
 import { NullableValue } from "../../common/nullableValue";
 import { GameConfiguration } from "./gameConfiguration";

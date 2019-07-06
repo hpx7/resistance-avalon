@@ -6,7 +6,7 @@ import { IGame, Role } from "../../../state/types";
 import { assertNever } from "../../../common/assertNever";
 import { capitalize, isEqual } from "lodash-es";
 import { NullableValue } from "../../../common/nullableValue";
-import { CountableValue } from "../../../common/countableNumber";
+import { CountableValue } from "../../../common/countableValue";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import { TernaryValue } from "../../../common/ternary";
 

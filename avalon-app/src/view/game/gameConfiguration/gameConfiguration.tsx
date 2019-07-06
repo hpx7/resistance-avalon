@@ -19,7 +19,7 @@ import { IconNames } from "@blueprintjs/icons";
 import { removeElementAtIndex } from "../../../common/remove";
 import { assertNever } from "../../../common/assertNever";
 import { isEqual } from "lodash-es";
-import { CountableValue } from "../../../common/countableNumber";
+import { CountableValue } from "../../../common/countableValue";
 import { getRoleCounts } from "../../../common/role";
 import { NullableValue } from "../../../common/nullableValue";
 
