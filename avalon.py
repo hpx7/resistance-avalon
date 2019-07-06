@@ -5,6 +5,8 @@ import flask
 import json
 import os
 
+URL_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~'
+
 app = flask.Flask(__name__)
 
 # database
@@ -62,20 +64,20 @@ def start_game(game_id, player_id, player_name):
     return flask.jsonify({'success': False})
 
   shuffled_roles = random.sample(role_list, len(role_list))
-  players = [(i, name, role_list[i]) for i, name in enumerate(player_order)]
+  players = [(URL_CHARS[i], name, role_list[i]) for i, name in enumerate(player_order)]
   result = games.update_one(
     {
       'id': game_id,
       'creator': player_name,
-      'players': {'$size': len(player_order), '$elemMatch': {'id': player_id, 'name': player_name}},
+      'players': {'$size': len(players), '$elemMatch': {'id': player_id, 'name': player_name}},
       'players.name': {'$all': player_order},
       'quests': [],
     },
     {
-      '$set': flatten_dicts([{'players.$[{}].role'.format(name): role, 'players.$[{}].order'.format(name): i} for i, name, role in players]),
+      '$set': flatten_dicts([{'players.$[{}].role'.format(i): role, 'players.$[{}].order'.format(i): i} for i, _, role in players]),
       '$push': {'quests': create_quest(1, 1, random.choice(player_order), len(player_order))}
     },
-    array_filters = [{'{}.name'.format(name): name} for name in player_order]
+    array_filters = [{'{}.name'.format(i): name} for i, name, _ in players]
   )
   return flask.jsonify({'success': bool(result.modified_count)})
 
@@ -175,7 +177,7 @@ def vote_in_quest(quest_id, player_id, player_name, vote):
   return flask.jsonify({'success': True})
 
 def random_id():
-  return ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~', k = 6))
+  return ''.join(random.choices(URL_CHARS, k = 6))
 
 def extract(key, objects):
   return [o[key] for o in objects if o.get(key)]
