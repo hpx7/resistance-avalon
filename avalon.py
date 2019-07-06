@@ -1,6 +1,6 @@
+import mongocache
 import pymongo
 import random
-import string
 import flask
 import json
 import os
@@ -9,6 +9,9 @@ app = flask.Flask(__name__)
 
 # database
 games = pymongo.MongoClient(os.getenv('MONGODB_URI')).get_database().games
+
+# cache
+games_cache = mongocache.CollectionCache(games, 'id')
 
 # which roles have knowledge of which other roles
 role_knowledge = {
@@ -77,11 +80,11 @@ def start_game(game_id, player_id, player_name):
 
 @app.route('/api/state/<game_id>/<player_id>')
 def get_state(game_id, player_id):
-  game = games.find_one({'id': game_id, 'players.id': player_id})
-  if game is None:
+  game = games_cache.get_doc(game_id)
+  if game is None or not any(player['id'] == player_id for player in game['players']):
     return flask.jsonify({'success': False})
   player = next(player for player in game['players'] if player['id'] == player_id)
-  return flask.jsonify({
+  response = flask.jsonify({
     'creator': game['creator'],
     'players': extract('name', game['players']),
     'roles': {role: role not in evil_roles for role in extract('role', game['players'])},
@@ -92,6 +95,8 @@ def get_state(game_id, player_id):
     'questAttempts': [sanitize_quest(game, quest, player) for quest in game['quests']],
     'status': get_game_status(game)
   })
+  response.add_etag()
+  return response.make_conditional(flask.request)
 
 @app.route('/api/propose/<quest_id>/<player_id>/<player_name>', methods=['POST'])
 def propose_quest(quest_id, player_id, player_name):
@@ -169,7 +174,7 @@ def vote_in_quest(quest_id, player_id, player_name, vote):
   return flask.jsonify({'success': True})
 
 def random_id():
-  return ''.join(random.choices(string.ascii_letters + string.digits, k = 6))
+  return ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~', k = 6))
 
 def extract(key, objects):
   return [o[key] for o in objects if o.get(key)]
