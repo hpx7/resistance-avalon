@@ -2,7 +2,7 @@ import { Dispatch } from "redux";
 import { IGameService } from "../api";
 import { IApplicationState } from "../state";
 import { SetGame, CreateToast } from "../state/actions";
-import { IStartGameRequest } from "../api/game";
+import { IStartGameRequest, IProposeQuestRequest } from "../api/game";
 
 export class GameService {
     constructor(private dispatch: Dispatch<IApplicationState>, private gameService: IGameService) {}
@@ -25,14 +25,25 @@ export class GameService {
             });
     }
 
-    public getGameState(gameId: string, userId: string): Promise<boolean> {
+    public getGameState(gameId: string, playerId: string): Promise<boolean> {
         this.dispatch(SetGame.InProgress(undefined))
-        return this.gameService.getGameState(gameId, userId).then(game => {
+        return this.gameService.getGameState(gameId, playerId).then(game => {
             this.dispatch(SetGame.Success(game));
             return true;
         }).catch(error => {
             this.dispatch(CreateToast.Failure.create(error));
             return false;
         })
+    }
+
+    public proposeQuest(
+        gameId: string,
+        playerId: string,
+        playerName: string,
+        proposeQuestRequest: IProposeQuestRequest) {
+        this.gameService.proposeQuest(gameId, playerId, playerName, proposeQuestRequest)
+            .catch(error => {
+                this.dispatch(CreateToast.Failure.create(error));
+            });
     }
 }

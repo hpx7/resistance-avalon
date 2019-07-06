@@ -15,6 +15,10 @@
         .playerMainContent {
             display: flex;
             align-items: center;
+
+            .playerSelect {
+                margin: 0;
+            }
         }
 
         .playerElement:not(:last-child) {
@@ -28,6 +32,10 @@
         .hideStatus {
             opacity: 0;
         }
+    }
+
+    .text {
+        color: $light-gray1;
     }
 }
 

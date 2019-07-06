@@ -53,9 +53,10 @@ $logo-size: 3 * $pt-grid-size;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-top: 2 * $pt-grid-size;
 
     .roundNumber {
-        margin-right: $pt-grid-size / 2;
+        padding: $pt-grid-size / 4 $pt-grid-size;
     }
 }
 
@@ -74,5 +75,20 @@ $logo-size: 3 * $pt-grid-size;
     & > div:not(:first-child):not(:last-child) {
         margin-top: $pt-grid-size;
         width: 100%;
+    }
+}
+
+.proposeQuest {
+    margin-top: $pt-grid-size;
+}
+
+.configurationError {
+    color: $red5;
+    display: flex;
+    align-items: center;
+    margin-top: $pt-grid-size;
+
+    :global(.#{$ns}-icon) {
+        margin-right: $pt-grid-size / 2;
     }
 }

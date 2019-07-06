@@ -1,5 +1,5 @@
 import React from "react";
-import { Icon, Intent, Popover, NonIdealState } from "@blueprintjs/core";
+import { Icon, Intent, Popover, NonIdealState, Checkbox } from "@blueprintjs/core";
 import styles from "./playerList.module.scss";
 import { IconNames } from "@blueprintjs/icons";
 import { IGame, Role } from "../../../state/types";
@@ -10,31 +10,52 @@ import { CountableValue } from "../../../common/countableValue";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import { TernaryValue } from "../../../common/ternary";
 
+interface IDndPropsBase {
+    canDragNDrog: boolean;
+}
+
+interface INotDragNDropProps extends IDndPropsBase {
+    canDragNDrog: false;
+}
+
+interface IDragNDropProps extends IDndPropsBase {
+    canDragNDrog: true;
+    onReorderPlayers: (players: string[]) => void;
+}
+
+type DndProps = INotDragNDropProps | IDragNDropProps;
+
+interface ISelectablePropsBase {
+    canSelect: boolean;
+}
+
+interface INotSelectableProps extends ISelectablePropsBase {
+    canSelect: false;
+}
+
+interface ISelectableProps extends ISelectablePropsBase {
+    canSelect: true;
+    onUpdateSelectedPlayers: (players: string[]) => void;
+    selectedPlayers: string[];
+}
+
+type SelectProps = INotSelectableProps | ISelectableProps;
 
 interface IBaseProps {
     players: string[];
     game: IGame;
     showKnowledge: boolean;
     showMyself: boolean;
-    canDragNDrog: boolean;
 }
 
-interface INotDragNDropProps extends IBaseProps {
-    canDragNDrog: false;
-}
-
-interface IDragNDropProps extends IBaseProps {
-    canDragNDrog: true;
-    onReorderPlayers: (players: string[]) => void;
-}
-
-type IProps = INotDragNDropProps | IDragNDropProps;
+type IProps = IBaseProps & DndProps & SelectProps;
 
 export class PlayerList extends React.PureComponent<IProps> {
     public static defaultProps: Partial<IProps> = {
         showKnowledge: true,
         showMyself: true,
         canDragNDrog: false,
+        canSelect: false,
     }
     private static STRINGS = {
         BAD_GUYS_TEXT: "This person is one of the minions of Mordred.",
@@ -80,14 +101,20 @@ export class PlayerList extends React.PureComponent<IProps> {
             showKnowledge,
             showMyself,
             canDragNDrog,
+            canSelect,
         } = this.props;
         const knownPlayers = new Set<string>(knowledge.players);
         const status = this.maybeRenderStatusIcon(myRole);
+        const dragHandle = <Icon icon={IconNames.DRAG_HANDLE_VERTICAL} className={styles.text} />;
         const content = [
-            <div key="player-name">{player}</div>,
-            (showMyself && player === myName && NullableValue.isNotNullish(myRole))
-                ? <div key="your-role" className={styles.you}>(You are {capitalize(myRole)})</div>
-                : undefined,
+            TernaryValue.of(canDragNDrog).ifTrue(dragHandle).get(),
+            TernaryValue.of(canSelect).ifTrue(this.renderPlayerSelect(player)).get(),
+            <div key="player-name" className={styles.text}>{player}</div>,
+            TernaryValue.of(showMyself && player === myName)
+                .ifTrue(NullableValue.isNotNullish(myRole)
+                    ? <div key="your-role" className={styles.you}>(You are {capitalize(myRole)})</div>
+                    : undefined)
+                .get(),
         ].filter(NullableValue.isNotNullish);
         const uniqueKey = `${player}-${idx}`;
         const renderedPlayer = (
@@ -95,8 +122,8 @@ export class PlayerList extends React.PureComponent<IProps> {
                 <div className={styles.playerMainContent}>
                     {content.map((elem, idx) => {
                         return <div key={`player-${idx}`} className={styles.playerElement}>{elem}</div>
-                    })
-                }</div>
+                    })}
+                </div>
                 {TernaryValue.of(showKnowledge && knownPlayers.has(player)).ifTrue(status).get()}
             </div>
         )
@@ -112,6 +139,16 @@ export class PlayerList extends React.PureComponent<IProps> {
             )
             .ifFalse(renderedPlayer)
             .get();
+    }
+
+    private renderPlayerSelect(player: string) {
+        return (
+            <Checkbox
+                className={styles.playerSelect}
+                checked={this.isPlayerChecked(player)}
+                onChange={this.onClickPlayer(player)}
+            />
+        )
     }
 
     private maybeRenderStatusIcon(role: Role | null | undefined) {
@@ -155,4 +192,23 @@ export class PlayerList extends React.PureComponent<IProps> {
             this.props.onReorderPlayers(playerOrder);
         }
     };
+
+    private isPlayerChecked(player: string) {
+        if (!this.props.canSelect) {
+            return false;
+        }
+        return this.props.selectedPlayers.includes(player);
+    }
+
+    private onClickPlayer = (player: string) => () => {
+        if (this.props.canSelect) {
+            const { onUpdateSelectedPlayers, selectedPlayers } = this.props;
+            if (this.isPlayerChecked(player)) {
+                const newSelectedPlayers = selectedPlayers.filter(selectedPlayer => selectedPlayer !== player);
+                onUpdateSelectedPlayers(newSelectedPlayers);
+            } else {
+                onUpdateSelectedPlayers([...selectedPlayers, player]);
+            }
+        }
+    }
 }
