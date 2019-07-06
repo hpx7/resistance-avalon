@@ -42,7 +42,7 @@ quest_configurations = {
 def create_game(player_name):
   game_id = random_id()
   player_id = random_id()
-  games.insert_one({'id': game_id, 'creator': player_name, 'players': [{'id': player_id, 'name': player_name, 'role': None}], 'quests': [] })
+  games.insert_one({'id': game_id, 'creator': player_name, 'players': [create_player(player_id, player_name)], 'quests': []})
   return flask.jsonify({'gameId': game_id, 'playerId': player_id, 'success': True})
 
 @app.route('/api/join/<game_id>/<player_name>', methods=['POST'])
@@ -50,7 +50,7 @@ def join_game(game_id, player_name):
   player_id = random_id()
   result = games.update_one(
     {'id': game_id, 'players.name': {'$ne': player_name}, 'quests': [] },
-    {'$push': {'players': {'id': player_id, 'name': player_name, 'role': None}}}
+    {'$push': {'players': create_player(player_id, player_name)}}
   )
   return flask.jsonify({'playerId': player_id, 'success': bool(result.modified_count)})
 
@@ -62,6 +62,7 @@ def start_game(game_id, player_id, player_name):
     return flask.jsonify({'success': False})
 
   shuffled_roles = random.sample(role_list, len(role_list))
+  players = [(i, name, role_list[i]) for i, name in enumerate(player_order)]
   result = games.update_one(
     {
       'id': game_id,
@@ -71,7 +72,7 @@ def start_game(game_id, player_id, player_name):
       'quests': [],
     },
     {
-      '$set': {'players.$[{}].role'.format(name): role for name, role in zip(player_order, shuffled_roles)},
+      '$set': flatten_dicts([{'players.$[{}].role'.format(name): role, 'players.$[{}].order'.format(name): i} for i, name, role in players]),
       '$push': {'quests': create_quest(1, 1, random.choice(player_order), len(player_order))}
     },
     array_filters = [{'{}.name'.format(name): name} for name in player_order]
@@ -86,7 +87,7 @@ def get_state(game_id, player_id):
   player = next(player for player in game['players'] if player['id'] == player_id)
   response = flask.jsonify({
     'creator': game['creator'],
-    'players': extract('name', game['players']),
+    'players': extract('name', sorted(game['players'], key = lambda player: player['order'])),
     'roles': {role: role not in evil_roles for role in extract('role', game['players'])},
     'questConfigurations': quest_configurations.get(len(game['players'])),
     'myName': player['name'],
@@ -178,6 +179,12 @@ def random_id():
 
 def extract(key, objects):
   return [o[key] for o in objects if o.get(key)]
+
+def flatten_dicts(dicts):
+  return {k: v for d in dicts for k, v in d.items()}
+
+def create_player(player_id, player_name):
+  return {'id': player_id, 'name': player_name, 'role': None, 'order': 0}
 
 def create_quest(roundNumber, attemptNumber, leader, num_players):
   return {
