@@ -20,8 +20,9 @@ import { removeElementAtIndex } from "../../../common/remove";
 import { assertNever } from "../../../common/assertNever";
 import { isEqual } from "lodash-es";
 import { CountableValue } from "../../../common/countableValue";
-import { getRoleCounts } from "../../../common/role";
+import { getRoleCounts, getNumGoodRoles } from "../../../common/role";
 import { NullableValue } from "../../../common/nullableValue";
+import { calcNumGoodPlayers } from "../../../common/goodBad";
 
 interface IGameConfigurationProps {
     game: IGame;
@@ -76,11 +77,12 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
         TOO_MANY_ROLES: "Too many roles specified.",
         NOT_ENOUGH_PLAYERS: "Not enough players.",
         TOO_MANY_PLAYERS: "Too many players.",
-        THERE_MUST_EXACTLY_ONE: "There must be exactly one",
-        THERE_CAN_BE_AT_MOST_ONE: "There can be at most one",
+        THERE_CAN_BE_AT_MOST: "There can be at most",
         TAB_NAVIGATION: "TabNavigation",
         DND_HELPER_TEXT: "Drag and drop to configure player order",
         NO_ROLES_SPECIFIED: "No roles specified",
+        GOOD_ROLE: "good role",
+        THERE_MUST_BE_EXACTLY: "There must be exactly",
     }
     private services = getServices(this.context);
 
@@ -232,14 +234,18 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
         } else if (players.length > MAX_PLAYER_COUNT) {
             return STRINGS.TOO_MANY_PLAYERS;
         }
+        const numGoodPlayers = calcNumGoodPlayers(roles.length);
+        if (getNumGoodRoles(roles) !== numGoodPlayers) {
+            return `${STRINGS.THERE_MUST_BE_EXACTLY} ${numGoodPlayers} ${STRINGS.GOOD_ROLE}`
+        }
         for (const role of [Role.MERLIN, Role.MORGANA, Role.PERCIVAL]) {
             if (this.getRoleCount(roleCounts, role) !== ROLE_LIMIT) {
-                return `${STRINGS.THERE_MUST_EXACTLY_ONE} ${role}`
+                return `${STRINGS.THERE_MUST_BE_EXACTLY} ${ROLE_LIMIT} ${role}`
             }
         }
         for (const role of [Role.OBERON, Role.MORDRED, Role.ASSASSIN]) {
             if (this.getRoleCount(roleCounts, Role.MERLIN) !== ROLE_LIMIT) {
-                return `${STRINGS.THERE_CAN_BE_AT_MOST_ONE} ${role}`
+                return `${STRINGS.THERE_CAN_BE_AT_MOST} ${ROLE_LIMIT} ${role}`
             }
         }
         return undefined;
