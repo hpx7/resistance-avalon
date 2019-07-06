@@ -1,0 +1,36 @@
+@import "~@blueprintjs/core/lib/scss/variables";
+
+.playerList {
+
+    .player {
+        height: 5 * $pt-grid-size;
+        display: flex;
+        align-items: center;
+        padding: $pt-grid-size;
+        justify-content: space-between;
+        background: $dark-gray3;
+        border: 1px solid $pt-dark-divider-white;
+        margin: $pt-grid-size / 5 0;
+
+        .playerMainContent {
+            display: flex;
+            align-items: center;
+        }
+
+        .playerElement:not(:last-child) {
+            margin-right: 5px;
+        }
+
+        .you {
+            color: $green3;
+        }
+
+        .hideStatus {
+            opacity: 0;
+        }
+    }
+}
+
+.playerStatusTooltip {
+    padding: $pt-grid-size / 2 $pt-grid-size;
+}

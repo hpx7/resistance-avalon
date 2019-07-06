@@ -1,0 +1,27 @@
+@import "~@blueprintjs/core/lib/scss/variables";
+
+.role {
+    height: 5 * $pt-grid-size;
+    display: flex;
+    align-items: center;
+    padding: $pt-grid-size;
+    justify-content: space-between;
+
+    &:not(:last-child) {
+        border-bottom: 1px solid $pt-dark-divider-white;
+    }
+}
+
+.configurationError {
+    color: $red5;
+    display: flex;
+    align-items: center;
+
+    :global(.#{$ns}-icon) {
+        margin-right: $pt-grid-size / 2;
+    }
+}
+
+.addRole, .dndHelper, .configurationError {
+    margin: $pt-grid-size 0;
+}

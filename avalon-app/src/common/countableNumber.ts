@@ -37,7 +37,7 @@ export class CountableValue<T> {
         return this.value;
     }
 
-    public getValueOrDefaultIfEmpty<T>(defaultValue: T) {
+    public getValueOrDefault<T>(defaultValue: T) {
         return this.isEmpty() ? defaultValue : this.value;
     }
 }

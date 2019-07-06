@@ -22,16 +22,17 @@ import { IconNames, IconName } from "@blueprintjs/icons";
 import { IApplicationState, IGameState } from "../../state";
 import { connect } from "react-redux";
 import { History } from "history";
-import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, Role, GameStatus } from "../../state/types";
+import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, GameStatus } from "../../state/types";
 import { HomePath } from "../../paths/home";
 import { times, constant, random, maxBy } from "lodash-es";
-import { Player } from "./player";
+import { PlayerList } from "./playerList";
 import { assertNever } from "../../common/assertNever";
-import { isEvilRole } from "../../common/role";
 import { CountableValue } from "../../common/countableNumber";
 import { AsyncLoadedValue } from "../../common/redoodle";
 import { NullableValue } from "../../common/nullableValue";
 import { GameConfiguration } from "./gameConfiguration";
+import sharedStyles from "../../styles/styles.module.scss";
+import { TernaryValue } from "../../common/ternary";
 
 interface IOwnProps {
     history: History;
@@ -121,7 +122,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                     </NavbarGroup>
                 </Navbar>
                 <div className={styles.content}>
-                    <Card elevation={Elevation.THREE} className={styles.card}>
+                    <Card elevation={Elevation.THREE} className={sharedStyles.pageContent}>
                         {this.renderContent()}
                     </Card>
                 </div>
@@ -173,7 +174,12 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                 return (
                     <div>
                         <H2 className={styles.gameHeader}>{STRINGS.WAITING_FOR_PLAYERS}</H2>
-                        {this.renderPlayers(game.value)}
+                        <PlayerList
+                            players={game.value.players}
+                            game={game.value}
+                            showKnowledge={false}
+                            showMyself={true}
+                        />
                     </div>
                 )
             case GameStatus.IN_PROGRESS:
@@ -212,7 +218,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                 return (
                     <div>
                         <H2 className={styles.gameHeader}>{STRINGS.PLAYERS}</H2>
-                        {this.renderPlayers(game)}
+                        <PlayerList players={game.players} game={game} />
                     </div>
                 );
             case GameAction.VIEW_QUESTS:
@@ -295,16 +301,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                             <div>Quest {roundNumber} - Attempt {attemptNumber}</div>
                             <div>Leader: {leader}</div>
                             <div>Participants:</div>
-                            <div>
-                                {members.map(member => (
-                                    <Player
-                                        player={member}
-                                        game={game}
-                                        showKnowledge={false}
-                                        showMyself={false}
-                                    />
-                                ))}
-                            </div>
+                            <PlayerList players={members} game={game} showKnowledge={false} showMyself={false} />
                         </div>
                     </div>
                 );
@@ -321,7 +318,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
 
     private renderCurrentQuestActions(game: IGame, questAttempt: IQuestAttempt) {
         const { status, attemptNumber, roundNumber, votes } = questAttempt;
-        const { myName, myRole } = game;
+        const { myName } = game;
         const { STRINGS } = UnconnectedGame;
         switch (status) {
             case QuestAttemptStatus.PENDING_PROPOSAL:
@@ -351,7 +348,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
                             <div>{STRINGS.QUEST_TITLE}</div>
                             <div className={styles.voteButtons}>
                                 <Button intent={Intent.SUCCESS} text={STRINGS.PASS}/>
-                                {this.maybeRenderFailButton(myRole)}
+                                {this.maybeRenderFailButton(game)}
                             </div>
                         </div>
                     )
@@ -364,15 +361,14 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         }
     }
 
-    private maybeRenderFailButton(myRole: Role | null | undefined) {
+    private maybeRenderFailButton(game: IGame) {
         const { STRINGS } = UnconnectedGame;
+        const { myRole, roles } = game;
         return NullableValue.of(myRole)
-            .map(role => {
-                if (isEvilRole(role)) {
-                    return <Button intent={Intent.DANGER} text={STRINGS.FAIL}/>;
-                }
-                return undefined;
-            }).getOrUndefined();
+            .map(role => TernaryValue.of(!roles[role])
+                .ifTrue(<Button intent={Intent.DANGER} text={STRINGS.FAIL}/>)
+                .get())
+            .getOrUndefined();
 
     }
 
@@ -389,19 +385,13 @@ export class UnconnectedGame extends React.PureComponent<GameProps> {
         });
     }
 
-    private renderPlayers(game: IGame) {
-        return game.players.map((player, idx) => {
-            return <Player key={`player-${idx}`} player={player} game={game} />
-        })
-    }
-
     private renderRoles = (roles: Record<string, boolean>) => {
         const { STRINGS } = UnconnectedGame;
         return CountableValue.of(Object.keys(roles))
             .map((role, idx) => {
                 const classes = classNames(styles.role, roles[role] ? styles.good : styles.bad);
                 return <div key={`${role}-${idx}`} className={classes}>{role}</div>
-            }).getValueOrDefaultIfEmpty(
+            }).getValueOrDefault(
                 <NonIdealState
                     title={STRINGS.GAME_NOT_STARTED}
                     icon={IconNames.WARNING_SIGN}

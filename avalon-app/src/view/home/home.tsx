@@ -19,6 +19,7 @@ import { GamePath } from "../../paths/game";
 import classNames from "classnames";
 import { History } from "history";
 import { AsyncLoadedValue } from "../../common/redoodle";
+import sharedStyles from "../../styles/styles.module.scss";
 
 interface IOwnProps {
     history: History;
@@ -142,7 +143,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
                 label={STRINGS.USER_NAME_LABEL}
                 labelFor="name-input"
                 labelInfo={STRINGS.REQUIRED_TEXT}
-                className={styles.form}
+                className={sharedStyles.pageContent}
                 intent={this.getIntentForValue(value)}
             >
                 <InputGroup

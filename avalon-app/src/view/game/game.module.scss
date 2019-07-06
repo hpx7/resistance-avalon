@@ -22,10 +22,6 @@ $logo-size: 3 * $pt-grid-size;
     justify-content: center;
 }
 
-.card {
-    width: 30 * $pt-grid-size;
-}
-
 .skeletonRow:not(:last-child) {
     margin-bottom: $pt-grid-size;
 }

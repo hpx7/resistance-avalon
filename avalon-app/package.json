@@ -15,6 +15,7 @@
     "node-sass": "^4.12.0",
     "query-string": "^6.8.1",
     "react": "^16.8.6",
+    "react-beautiful-dnd": "^11.0.4",
     "react-dom": "^16.8.6",
     "react-redux": "^5.0.6",
     "react-router": "^5.0.1",
@@ -50,9 +51,10 @@
     "@types/classnames": "^2.2.8",
     "@types/lodash-es": "^4.17.3",
     "@types/query-string": "^6.3.0",
+    "@types/react-beautiful-dnd": "^11.0.2",
     "@types/react-redux": "^5.0.20",
     "@types/react-router-dom": "^4.3.4",
     "@types/redux": "^3.6.0"
   },
-  "proxy": "https://avalon-heroku.herokuapp.com"
+  "proxy": "http://localhost:5000"
 }

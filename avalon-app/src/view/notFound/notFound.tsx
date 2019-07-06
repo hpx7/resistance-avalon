@@ -3,8 +3,9 @@ import { NonIdealState, Button, Intent, Card, Elevation } from "@blueprintjs/cor
 import { PathLink } from "../../common/navigationWithPath";
 import { HomePath } from "../../paths/home";
 import { IconNames } from "@blueprintjs/icons";
+import sharedStyles from "../../styles/styles.module.scss";
 
-export class NotFound extends React.PureComponent<{}> {
+export class NotFound extends React.PureComponent {
     private static STRINGS = {
         TITLE: "Page not found",
         ACTION: "Back to home",
@@ -13,7 +14,7 @@ export class NotFound extends React.PureComponent<{}> {
     public render() {
         const { STRINGS } = NotFound;
         return (
-            <Card elevation={Elevation.THREE}>
+            <Card elevation={Elevation.THREE} className={sharedStyles.pageContent}>
                 <NonIdealState
                     title={STRINGS.TITLE}
                     icon={IconNames.ERROR}
