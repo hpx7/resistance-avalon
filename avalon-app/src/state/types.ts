@@ -68,6 +68,7 @@ export interface IQuestAttempt {
     leader: string;
     members: string[];
     myVote?: Vote;
+    myResult?: Vote;
     votes: { [key: string]: Vote };
     remainingVotes: number;
     results: number[];
