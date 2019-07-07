@@ -55,6 +55,11 @@ export enum GameStatus {
     EVIL_WON = "evil_won",
 }
 
+export enum Vote {
+    PASS = 1,
+    FAIL = -1,
+}
+
 export interface IQuestAttempt {
     id: string;
     roundNumber: number;
@@ -62,8 +67,8 @@ export interface IQuestAttempt {
     size: number;
     leader: string;
     members: string[];
-    myVote: number;
-    votes: { [key: string]: number };
+    myVote?: Vote;
+    votes: { [key: string]: Vote };
     remainingVotes: number;
     results: number[];
     remainingResults: number;

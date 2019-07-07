@@ -78,17 +78,32 @@ $logo-size: 3 * $pt-grid-size;
     }
 }
 
-.proposeQuest {
+.proposeQuest,
+.proposalPlayerList,
+.alert,
+.waitingForVotes,
+.questParticipants {
     margin-top: $pt-grid-size;
 }
 
-.configurationError {
+.alert {
     color: $red5;
     display: flex;
     align-items: center;
-    margin-top: $pt-grid-size;
 
     :global(.#{$ns}-icon) {
         margin-right: $pt-grid-size / 2;
     }
+}
+
+.danger {
+    color: $red5;
+}
+
+.primary {
+    color: $blue5;
+}
+
+.questParticipants {
+    width: 100%;
 }

@@ -22,7 +22,7 @@ import { IconNames, IconName } from "@blueprintjs/icons";
 import { IApplicationState, IGameState } from "../../state";
 import { connect } from "react-redux";
 import { History } from "history";
-import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, GameStatus } from "../../state/types";
+import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, GameStatus, Vote } from "../../state/types";
 import { HomePath } from "../../paths/home";
 import { times, constant, random, maxBy } from "lodash-es";
 import { PlayerList } from "./playerList";
@@ -33,6 +33,7 @@ import { NullableValue } from "../../common/nullableValue";
 import { GameConfiguration } from "./gameConfiguration";
 import sharedStyles from "../../styles/styles.module.scss";
 import { TernaryValue } from "../../common/ternary";
+import { voteToString } from "../../common/vote";
 
 interface IOwnProps {
     history: History;
@@ -41,8 +42,15 @@ interface IOwnProps {
     playerName: string;
 }
 
+interface IMyQuestResult {
+    myResult: Vote;
+    questAttempt: IQuestAttempt;
+}
+
 interface IState {
     questMembers: string[];
+    // TODO remove once BE implements myResult
+    myQuestResult: IMyQuestResult | undefined;
 }
 
 type GameProps = IOwnProps & IGameState;
@@ -53,6 +61,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     public static contextTypes = ContextType;
     public state: IState = {
         questMembers: [],
+        myQuestResult: undefined,
     };
     private static STRINGS = {
         AVALON: "Avalon",
@@ -68,7 +77,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         WAITING_FOR_OTHER_VOTES: "Waiting for other players to vote.",
         PROPOSAL_TITLE: "Do you approve or reject this proposal?",
         PROPOSE_QUEST: "Propose quest",
-        QUEST_TITLE: "Do you approve or reject this quest?",
+        QUEST_TITLE: "Do you want to pass or fail this quest?",
         GAME_NOT_STARTED: "The game has not started and roles have not been specified",
         PASS: "Pass",
         FAIL: "Fail",
@@ -87,7 +96,9 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         DOES_NOT_EXIST: "does not exist",
         NOT_LEADER_TEXT: "You are not the leader of the quest",
         TOO_MANY_QUEST_MEMBERS_TEXT: "Too many quest members",
-        NOT_ENOUGH_QUEST_MEMBERS: "Not enough quest members"
+        NOT_ENOUGH_QUEST_MEMBERS: "Not enough quest members",
+        YOU_VOTED: "You voted",
+        NOT_PART_OF_QUEST: "You are not going on this quest."
     }
     private services = getServices(this.context);
     private interval: number | undefined;
@@ -99,6 +110,25 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     public componentDidUpdate() {
         const { game, gameAction } = this.props;
         const { STRINGS } = UnconnectedGame;
+
+        // TODO delete when BE provides myResult
+        if (AsyncLoadedValue.isReady(game)) {
+            CountableValue.of(game.value.questAttempts)
+                .maybeGetLastElement()
+                .map(questAttempt => {
+                    this.setState(prevState => {
+                        return NullableValue.of(prevState.myQuestResult)
+                            .map(myQuestResult =>
+                                TernaryValue.of(questAttempt.id === myQuestResult.questAttempt.id
+                                    && questAttempt.attemptNumber === myQuestResult.questAttempt.attemptNumber)
+                                    .ifTrue(prevState)
+                                    .ifFalse({...prevState, myQuestResult: undefined })
+                                    .get()
+                            ).getOrDefault(prevState);
+                    });
+                    return true;
+                }).getOrDefault(true);
+        }
         switch (gameAction) {
             case GameAction.VIEW_ROLES:
                 this.services.stateService.setDocumentTitle(STRINGS.VIEW_ROLES_TITLE);
@@ -313,7 +343,9 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                                 <div>Quest {roundNumber} - Attempt {attemptNumber}</div>
                                 <div>Leader: {leader}</div>
                                 <div>Participants:</div>
-                                <PlayerList players={members} game={game} showKnowledge={false} showMyself={true} />
+                                <div className={styles.questParticipants}>
+                                    <PlayerList players={members} game={game} showKnowledge={false} showMyself={true} />
+                                </div>
                             </div>
                         </div>
                     ).get();
@@ -329,45 +361,80 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     private renderCurrentQuestActions(game: IGame, questAttempt: IQuestAttempt) {
-        const { status, attemptNumber, roundNumber, votes, leader } = questAttempt;
+        const { id, status, attemptNumber, roundNumber, leader, members } = questAttempt;
         const { myName } = game;
         const { STRINGS } = UnconnectedGame;
         switch (status) {
             case QuestAttemptStatus.PENDING_PROPOSAL:
                 return TernaryValue.of(leader === myName)
-                    .ifTrue(this.renderQuestPropoosal(game))
+                    .ifTrue(this.renderQuestPropoosal(game, id))
                     .ifFalse(`Waiting for ${leader} to propose a quest.`)
                     .get();
             case QuestAttemptStatus.PENDING_PROPOSAL_VOTES:
-                if (votes[myName]) {
-                    return STRINGS.WAITING_FOR_OTHER_VOTES;
-                } else {
-                    return (
+                return NullableValue.of(questAttempt.myVote)
+                    .map(myVote => (
+                        <>
+                            <div className={styles.alert}>
+                                <Icon iconSize={12} intent={Intent.PRIMARY} icon={IconNames.CONFIRM} />
+                                <div className={styles.primary}>
+                                    {STRINGS.YOU_VOTED}: <code>{voteToString(myVote)}</code>
+                                </div>
+                            </div>
+                            <div className={styles.waitingForVotes}>{STRINGS.WAITING_FOR_OTHER_VOTES}</div>
+                        </>
+                    ))
+                    .getOrDefault(
                         <div>
-                            <div>{STRINGS.PROPOSAL_TITLE}</div>
+                            <div className={styles.waitingForVotes}>{STRINGS.PROPOSAL_TITLE}</div>
+                            {this.maybeRenderMyVote(questAttempt)}
                             <div className={styles.voteButtons}>
-                                <Button intent={Intent.SUCCESS} text={STRINGS.APPROVE}/>
-                                <Button intent={Intent.DANGER} text={STRINGS.REJECT}/>
+                                <Button
+                                    onClick={this.onVoteOnQuestProposal(questAttempt, Vote.PASS)}
+                                    intent={Intent.SUCCESS}
+                                    text={STRINGS.APPROVE}
+                                />
+                                <Button
+                                    onClick={this.onVoteOnQuestProposal(questAttempt, Vote.FAIL)}
+                                    intent={Intent.DANGER}
+                                    text={STRINGS.REJECT}
+                                />
                             </div>
                         </div>
                     )
-                }
             case QuestAttemptStatus.PROPOSAL_REJECTED:
                 return `Quest ${roundNumber} proposal ${attemptNumber} was rejected.`;
             case QuestAttemptStatus.PENDING_QUEST_RESULTS:
-                if (myName in votes) {
-                    return STRINGS.WAITING_FOR_QUEST_RESULTS;
-                } else {
-                    return (
-                        <div>
-                            <div>{STRINGS.QUEST_TITLE}</div>
-                            <div className={styles.voteButtons}>
-                                <Button intent={Intent.SUCCESS} text={STRINGS.PASS}/>
-                                {this.maybeRenderFailButton(game)}
+                return TernaryValue.of(members.includes(myName))
+                    .ifTrue(NullableValue.of(this.state.myQuestResult)
+                        .map(({ myResult }) => (
+                            <>
+                                <div className={styles.alert}>
+                                    <Icon iconSize={12} intent={Intent.PRIMARY} icon={IconNames.CONFIRM} />
+                                    <div className={styles.primary}>
+                                        {STRINGS.YOU_VOTED}: <code>{voteToString(myResult, true)}</code>
+                                    </div>
+                                </div>
+                                <div className={styles.waitingForVotes}>{STRINGS.WAITING_FOR_OTHER_VOTES}</div>
+                            </>
+                        )).getOrDefault(
+                            <div>
+                                <div className={styles.waitingForVotes}>{STRINGS.QUEST_TITLE}</div>
+                                <div className={styles.voteButtons}>
+                                    <Button
+                                        onClick={this.onVoteOnQuest(questAttempt, Vote.PASS)}
+                                        intent={Intent.SUCCESS}
+                                        text={STRINGS.PASS}
+                                    />
+                                    {this.maybeRenderFailButton(game, questAttempt)}
+                                </div>
                             </div>
-                        </div>
-                    )
-                }
+                        )
+                    ).ifFalse(
+                        <>
+                            <div className={styles.waitingForVotes}>{STRINGS.NOT_PART_OF_QUEST}</div>
+                            <div className={styles.waitingForVotes}>{STRINGS.WAITING_FOR_QUEST_RESULTS}</div>
+                        </>
+                    ).get();
             case QuestAttemptStatus.PASSED:
             case QuestAttemptStatus.FAILED:
                 return `Quest number ${roundNumber} ${status}!`;
@@ -376,27 +443,29 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         }
     }
 
-    private renderQuestPropoosal(game: IGame) {
+    private renderQuestPropoosal(game: IGame, questId: string) {
         const { STRINGS } = UnconnectedGame;
         return (
             <div>
                 {STRINGS.SELECT_PLAYERS_TO_GO_ON_A_QUEST}
-                <PlayerList
-                    players={game.players}
-                    game={game}
-                    showKnowledge={false}
-                    showMyself={false}
-                    canSelect={true}
-                    selectedPlayers={this.state.questMembers}
-                    onUpdateSelectedPlayers={this.onUpdateSelectedPlayers}
-                />
+                <div className={styles.proposalPlayerList}>
+                    <PlayerList
+                        players={game.players}
+                        game={game}
+                        showKnowledge={false}
+                        showMyself={false}
+                        canSelect={true}
+                        selectedPlayers={this.state.questMembers}
+                        onUpdateSelectedPlayers={this.onUpdateSelectedPlayers}
+                    />
+                </div>
                 {this.maybeRenderProposeQuestError(game)}
                 <Button
                     className={styles.proposeQuest}
                     disabled={!this.canProposeQuest(game)}
                     intent={Intent.PRIMARY}
                     text={STRINGS.PROPOSE_QUEST}
-                    onClick={this.onProposeQuest(game)}
+                    onClick={this.onProposeQuest(game, questId)}
                 />
             </div>
         )
@@ -405,9 +474,21 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     private maybeRenderProposeQuestError(game: IGame) {
         return NullableValue.of(this.maybeGetProposeQuestErrorMessage(game))
             .map(errorMessage => (
-                <div className={styles.configurationError}>
+                <div className={styles.alert}>
                     <Icon iconSize={12} intent={Intent.DANGER} icon={IconNames.ERROR} />
-                    <div>{errorMessage}</div>
+                    <div className={styles.danger}>{errorMessage}</div>
+                </div>
+            ))
+            .getOrUndefined();
+    }
+
+    private maybeRenderMyVote(questAttempt: IQuestAttempt) {
+        const { STRINGS } = UnconnectedGame;
+        return NullableValue.of(questAttempt.myVote)
+            .map(myVote => (
+                <div className={styles.alert}>
+                    <Icon iconSize={12} intent={Intent.PRIMARY} icon={IconNames.CONFIRM} />
+                    <div className={styles.primary}>{STRINGS.YOU_VOTED}: <code>{myVote}</code></div>
                 </div>
             ))
             .getOrUndefined();
@@ -443,30 +524,42 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         return this.maybeGetProposeQuestErrorMessage(game) == null;
     }
 
-    private onProposeQuest = (game: IGame) => () => {
-        const {
-            gameId,
-            playerId,
-            playerName,
-        } = this.props;
+    private onProposeQuest = (game: IGame, questId: string) => () => {
+        const { playerId, playerName } = this.props;
         if (this.canProposeQuest(game)) {
-            this.services.gameService.proposeQuest(gameId, playerId, playerName, {
+            this.services.gameService.proposeQuest(questId, playerId, playerName, {
                 proposal: this.state.questMembers,
             });
         }
+    }
+
+    private onVoteOnQuestProposal = (questAttempt: IQuestAttempt, vote: Vote) => () => {
+        const { playerId, playerName } = this.props;
+        this.services.gameService.voteOnProposal(questAttempt.id, playerId, playerName, vote);
+    }
+
+    private onVoteOnQuest = (questAttempt: IQuestAttempt, vote: Vote) => () => {
+        const { playerId, playerName } = this.props;
+        this.services.gameService.voteOnQuest(questAttempt.id, playerId, playerName, vote);
+        this.setState({ myQuestResult: { questAttempt, myResult: vote } });
     }
 
     private onUpdateSelectedPlayers = (selectedPlayers: string[]) => {
         this.setState({ questMembers: selectedPlayers })
     }
 
-    private maybeRenderFailButton(game: IGame) {
+    private maybeRenderFailButton(game: IGame, questAttempt: IQuestAttempt) {
         const { STRINGS } = UnconnectedGame;
         const { myRole, roles } = game;
         return NullableValue.of(myRole)
             .map(role => TernaryValue.of(!roles[role])
-                .ifTrue(<Button intent={Intent.DANGER} text={STRINGS.FAIL}/>)
-                .get())
+                .ifTrue(
+                    <Button
+                        onClick={this.onVoteOnQuest(questAttempt, Vote.FAIL)}
+                        intent={Intent.DANGER}
+                        text={STRINGS.FAIL}
+                    />
+                ).get())
             .getOrUndefined();
 
     }

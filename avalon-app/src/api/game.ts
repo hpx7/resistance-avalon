@@ -1,6 +1,5 @@
-import { IGame } from "../state";
+import { IGame, Role, Vote } from "../state";
 import { IHttpApiBridge, MediaType, IHttpEndpointOptions } from "conjure-client";
-import { Role } from "../state/types";
 
 interface IBaseResponse {
     success: boolean;
@@ -42,7 +41,7 @@ export interface IGameService {
         startGameRequest: IStartGameRequest): Promise<IStartGameResponse>;
     getGameState(gameId: string, userId: string): Promise<IGame>;
     proposeQuest(
-        gameId: string,
+        questId: string,
         playerId: string,
         playerName: string,
         proposeQuestRequest: IProposeQuestRequest): Promise<IProposeQuestResponse>;
@@ -50,12 +49,12 @@ export interface IGameService {
         questId: string,
         playerId: string,
         playerName: string,
-        vote: number): Promise<IVoteOnQuestProposalResponse>;
+        vote: Vote): Promise<IVoteOnQuestProposalResponse>;
     voteOnQuest(
         questId: string,
         playerId: string,
         playerName: string,
-        vote: number): Promise<IVoteOnQuestResponse>;
+        vote: Vote): Promise<IVoteOnQuestResponse>;
 }
 
 export class GameService implements IGameService {
@@ -134,12 +133,12 @@ export class GameService implements IGameService {
         questId: string,
         playerId: string,
         playerName: string,
-        vote: number): Promise<IVoteOnQuestProposalResponse> {
+        vote: Vote): Promise<IVoteOnQuestProposalResponse> {
         return this.bridge.callEndpoint<IVoteOnQuestProposalResponse>({
             ...GameService.BASE_HTTP_ENDPOINT_OPTIONS,
             data: undefined,
-            endpointName: "proposeQuest",
-            endpointPath: "/api/propose/{questId}/{playerId}/{playerName}/{vote}",
+            endpointName: "voteOnQuestProposal",
+            endpointPath: "/api/proposal/vote/{questId}/{playerId}/{playerName}/{vote}",
             pathArguments: [ questId, playerId, playerName, vote ],
         });
     }
@@ -148,12 +147,12 @@ export class GameService implements IGameService {
         questId: string,
         playerId: string,
         playerName: string,
-        vote: number): Promise<IVoteOnQuestResponse> {
+        vote: Vote): Promise<IVoteOnQuestResponse> {
         return this.bridge.callEndpoint<IVoteOnQuestResponse>({
             ...GameService.BASE_HTTP_ENDPOINT_OPTIONS,
             data: undefined,
-            endpointName: "proposeQuest",
-            endpointPath: "/api/propose/{questId}/{playerId}/{playerName}/{vote}",
+            endpointName: "voteOnQuest",
+            endpointPath: "/api/quest/vote/{questId}/{playerId}/{playerName}/{vote}",
             pathArguments: [ questId, playerId, playerName, vote ],
         });
     }

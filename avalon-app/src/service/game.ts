@@ -3,6 +3,7 @@ import { IGameService } from "../api";
 import { IApplicationState } from "../state";
 import { SetGame, CreateToast } from "../state/actions";
 import { IStartGameRequest, IProposeQuestRequest } from "../api/game";
+import { Vote } from "../state/types";
 
 export class GameService {
     constructor(private dispatch: Dispatch<IApplicationState>, private gameService: IGameService) {}
@@ -37,11 +38,33 @@ export class GameService {
     }
 
     public proposeQuest(
-        gameId: string,
+        questId: string,
         playerId: string,
         playerName: string,
         proposeQuestRequest: IProposeQuestRequest) {
-        this.gameService.proposeQuest(gameId, playerId, playerName, proposeQuestRequest)
+        this.gameService.proposeQuest(questId, playerId, playerName, proposeQuestRequest)
+            .catch(error => {
+                this.dispatch(CreateToast.Failure.create(error));
+            });
+    }
+
+    public voteOnProposal(
+        questId: string,
+        playerId: string,
+        playerName: string,
+        vote: Vote) {
+        this.gameService.voteOnQuestProposal(questId, playerId, playerName, vote)
+            .catch(error => {
+                this.dispatch(CreateToast.Failure.create(error));
+            });
+    }
+
+    public voteOnQuest(
+        questId: string,
+        playerId: string,
+        playerName: string,
+        vote: Vote) {
+        this.gameService.voteOnQuest(questId, playerId, playerName, vote)
             .catch(error => {
                 this.dispatch(CreateToast.Failure.create(error));
             });
