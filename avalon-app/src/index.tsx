@@ -5,7 +5,7 @@ import { App } from "./view/app/app";
 import * as serviceWorker from "./serviceWorker";
 import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
-// import { loggingMiddleware } from "redoodle";
+import { loggingMiddleware } from "redoodle";
 import { applyMiddleware, createStore } from "redux";
 import { composeWithDevTools } from "redux-devtools-extension";
 import { INITIAL_APPLICATION_STATE, appReducer, IApplicationState } from "./state";
@@ -16,7 +16,7 @@ import { toasterMiddleware, titleMiddleware } from "./middleware";
 
 const middlewareEnhancer = composeWithDevTools(applyMiddleware(
     titleMiddleware(),
-    // loggingMiddleware(),
+    loggingMiddleware(),
     toasterMiddleware()));
 const createStoreWithMiddleware = middlewareEnhancer<IApplicationState>(createStore);
 const store = createStoreWithMiddleware(appReducer, INITIAL_APPLICATION_STATE);

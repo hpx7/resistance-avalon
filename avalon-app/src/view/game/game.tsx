@@ -64,9 +64,9 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         QUEST_HISTORY: "Quest history",
         CURRENT_QUEST: "Current quest",
         START_GAME: "Start game",
-        WAITING_FOR_QUEST_RESULTS: "Waiting for all quest members to vote.",
-        SELECT_PLAYERS_TO_GO_ON_A_QUEST: "Select players to go on a quest.",
-        WAITING_FOR_OTHER_VOTES: "Waiting for other players to vote.",
+        WAITING_FOR_QUEST_RESULTS: "Waiting for all quest members to vote",
+        SELECT_PLAYERS_TO_GO_ON_A_QUEST: "Select players to go on a quest",
+        WAITING_FOR_OTHER_VOTES: "Waiting for other players to vote",
         PROPOSAL_TITLE: "Do you approve or reject this proposal?",
         PROPOSE_QUEST: "Propose quest",
         QUEST_TITLE: "Do you want to pass or fail this quest?",
@@ -90,7 +90,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         TOO_MANY_QUEST_MEMBERS_TEXT: "Too many quest members",
         NOT_ENOUGH_QUEST_MEMBERS: "Not enough quest members",
         YOU_VOTED: "You voted",
-        NOT_PART_OF_QUEST: "You are not going on this quest."
+        NOT_PART_OF_QUEST: "You are not going on this quest"
     }
     private services = getServices(this.context);
     private interval: number | undefined;

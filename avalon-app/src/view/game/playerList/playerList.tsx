@@ -58,8 +58,8 @@ export class PlayerList extends React.PureComponent<IProps> {
         canSelect: false,
     }
     private static STRINGS = {
-        BAD_GUYS_TEXT: "This person is one of the minions of Mordred.",
-        PERCIVAL_TEXT: "This person is either Merlin or Morgana.",
+        BAD_GUYS_TEXT: "This person is one of the minions of Mordred",
+        PERCIVAL_TEXT: "This person is either Merlin or Morgana",
         NO_PLAYERS_IN_GAME: "There are no players in this game",
         PLAYER_LIST: "player_list",
     }

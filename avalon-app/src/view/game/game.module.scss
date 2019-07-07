@@ -10,8 +10,12 @@ $logo-size: 3 * $pt-grid-size;
     background-size: cover;
 }
 
-.navbar {
-    height: $nav-bar-height;
+:global(.#{$ns}-dark) {
+    .navbar:global(.#{$ns}-navbar) {
+        height: $nav-bar-height;
+        background-color: transparent;
+        box-shadow: none;
+    }
 }
 
 .content {
@@ -35,10 +39,9 @@ $logo-size: 3 * $pt-grid-size;
     align-items: center;
     padding: $pt-grid-size;
     justify-content: space-between;
-
-    &:not(:last-child) {
-        border-bottom: 1px solid $pt-dark-divider-white;
-    }
+    height: 5 * $pt-grid-size;
+    border: 1px solid $pt-dark-divider-white;
+    background: $dark-gray3;
 
     &.good {
         color: $green5;
