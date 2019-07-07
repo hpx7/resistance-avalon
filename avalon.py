@@ -216,6 +216,7 @@ def sanitize_quest(game, quest, player):
   new_quest['votes'] = sorted(quest['votes'], key = lambda vote: vote['player']) if quest['remainingVotes'] == 0 else []
   new_quest['results'] = [result['vote'] for result in quest['results']] if quest['remainingResults'] == 0 else []
   new_quest['myVote'] = next((vote['vote'] for vote in quest['votes'] if vote['player'] == player['name']), None)
+  new_quest['myResult'] = next((result['vote'] for result in quest['results'] if result['player'] == player['name']), None)
   new_quest['status'] = get_quest_status(game, quest)
   del new_quest['voteStatus']
   del new_quest['failures']
