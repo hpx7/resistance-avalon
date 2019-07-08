@@ -1,9 +1,9 @@
 import React from "react";
 import { NonIdealState, Button, Intent, Card, Elevation } from "@blueprintjs/core";
 import { PathLink } from "../../common/navigationWithPath";
-import { HomePath } from "../../paths/home";
 import { IconNames } from "@blueprintjs/icons";
 import sharedStyles from "../../styles/styles.module.scss";
+import { JoinPath } from "../../paths";
 
 export class NotFound extends React.PureComponent {
     private static STRINGS = {
@@ -27,7 +27,7 @@ export class NotFound extends React.PureComponent {
     private renderBackToHome() {
         const { STRINGS } = NotFound;
         return (
-            <PathLink to={new HomePath()}>
+            <PathLink to={new JoinPath()}>
                 <Button intent={Intent.PRIMARY} text={STRINGS.ACTION} />
             </PathLink>
         );

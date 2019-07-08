@@ -34,7 +34,6 @@ export enum HomeAction {
 }
 
 export interface IHomeState {
-    homeAction: HomeAction;
     playerName: IAsyncLoaded<string, string>;
     gameId: IAsyncLoaded<string, string>;
 }

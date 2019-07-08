@@ -24,6 +24,7 @@
     "redoodle": "^2.3.2",
     "redux": "^3.7.2",
     "redux-devtools-extension": "^2.13.8",
+    "ts-clipboard": "^1.0.17",
     "typescript": "3.5.2"
   },
   "scripts": {

@@ -23,7 +23,6 @@ import { IApplicationState, IGameState } from "../../state";
 import { connect } from "react-redux";
 import { History } from "history";
 import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, GameStatus, Vote } from "../../state/types";
-import { HomePath } from "../../paths/home";
 import { times, constant, random, maxBy } from "lodash-es";
 import { PlayerList } from "./playerList";
 import { assertNever } from "../../common/assertNever";
@@ -34,6 +33,7 @@ import { GameConfiguration } from "./gameConfiguration";
 import sharedStyles from "../../styles/styles.module.scss";
 import { TernaryValue } from "../../common/ternary";
 import { voteToString } from "../../common/vote";
+import { JoinPath } from "../../paths";
 
 interface IOwnProps {
     history: History;
@@ -176,7 +176,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     private renderContent() {
-        const { game, playerId, gameId } = this.props;
+        const { game, playerId, gameId, history } = this.props;
         if (!AsyncLoadedValue.isReady(game)) {
             return this.renderGameSkeleton();
         }
@@ -185,7 +185,14 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         switch (status) {
             case GameStatus.NOT_STARTED:
                 if (creator === myName) {
-                    return <GameConfiguration game={game.value} playerId={playerId} gameId={gameId} />
+                    return (
+                        <GameConfiguration
+                            game={game.value}
+                            playerId={playerId}
+                            gameId={gameId}
+                            history={history}
+                        />
+                    );
                 }
                 return (
                     <div>
@@ -505,6 +512,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
             this.services.gameService.proposeQuest(questId, playerId, playerName, {
                 proposal: this.state.questMembers,
             });
+            this.setState({ questMembers: [] });
         }
     }
 
@@ -570,7 +578,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     private redirectToHome = () => {
-        this.props.history.push(new HomePath().getPathName());
+        this.props.history.push(new JoinPath().getLocationDescriptor());
     }
 
     private setAction = (action: GameAction) => () => this.services.stateService.setGameAction(action);

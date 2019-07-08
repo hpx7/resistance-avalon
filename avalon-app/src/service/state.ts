@@ -2,13 +2,12 @@ import { Dispatch } from "redux";
 import {
     SetTitle,
     SetGameAction,
-    HomeAction,
     GameAction,
     IApplicationState,
     SetPlayerName,
     SetGameId,
-    SetHomeAction,
     SetGame,
+    ClearHomeState,
 } from "../state";
 
 export class StateService {
@@ -26,8 +25,8 @@ export class StateService {
         this.dispatch(SetGameId.Success.create(gameUserId));
     }
 
-    public setHomeAction(homeAction: HomeAction) {
-        this.dispatch(SetHomeAction.create(homeAction));
+    public clearHomeState() {
+        this.dispatch(ClearHomeState.create(undefined));
     }
 
     public setGameAction(gameAction: GameAction) {

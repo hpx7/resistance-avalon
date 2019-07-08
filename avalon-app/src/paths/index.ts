@@ -1,2 +1,3 @@
-export { GamePath } from "./game";
-export { HomePath } from "./home";
+export * from "./game";
+export * from "./join";
+export * from "./create";

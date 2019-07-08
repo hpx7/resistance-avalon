@@ -15,14 +15,18 @@ import { IApplicationState, HomeAction } from "../../state/types";
 import { connect } from "react-redux";
 import { ContextType, getServices } from "../../common/contextProvider";
 import { handleStringChange } from "../../common/handleStringChange";
-import { GamePath } from "../../paths/game";
 import classNames from "classnames";
 import { History } from "history";
 import { AsyncLoadedValue } from "../../common/redoodle";
 import sharedStyles from "../../styles/styles.module.scss";
+import { assertNever } from "../../common/assertNever";
+import { GamePath, JoinPath, CreatePath } from "../../paths";
+import { NullableValue } from "../../common/nullableValue";
 
 interface IOwnProps {
     history: History;
+    gameIdQueryParam?: string;
+    homeAction: HomeAction;
 }
 
 type HomeProps = IOwnProps & IHomeState;
@@ -52,7 +56,18 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
     public componentDidMount() {
         const { STRINGS } = UnconnectedHome;
         this.services.stateService.clearGame();
-        this.services.stateService.setDocumentTitle(STRINGS.AVALON_TITLE)
+        this.services.stateService.setDocumentTitle(STRINGS.AVALON_TITLE);
+        const { gameIdQueryParam } = this.props;
+        if (gameIdQueryParam != null) {
+            this.services.stateService.setGameId(gameIdQueryParam);
+        }
+    }
+
+    public componentDidUpdate(prevProps: HomeProps) {
+        const { gameIdQueryParam } = this.props;
+        if (gameIdQueryParam !== prevProps.gameIdQueryParam) {
+            this.services.stateService.setGameId(NullableValue.of(gameIdQueryParam).getOrDefault(""));
+        }
     }
 
     public render() {
@@ -157,7 +172,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
     }
 
     private renderGameIdInput() {
-        const { gameId } = this.props;
+        const { gameId, gameIdQueryParam } = this.props;
         const { STRINGS } = UnconnectedHome;
         const value = AsyncLoadedValue.getValueOrDefault(gameId, "");
         const helperText = AsyncLoadedValue.valueCheck(gameId, id => id.length === 0)
@@ -175,6 +190,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
             >
                 <InputGroup
                     id="game-id-input"
+                    disabled={gameIdQueryParam != null}
                     onChange={handleStringChange(this.onGameIdChange)}
                     placeholder={STRINGS.GAME_PLACEHOLDER}
                     value={value}
@@ -212,7 +228,8 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
         if (AsyncLoadedValue.isReady(gameId) && AsyncLoadedValue.isReady(playerName)) {
             this.services.gameService.joinGame(gameId.value, playerName.value).then(maybePlayerId => {
                 if (maybePlayerId != null && maybePlayerId.success) {
-                    history.push(new GamePath(gameId.value, maybePlayerId.playerId, playerName.value).getPathName());
+                    const gamePath = new GamePath(gameId.value, maybePlayerId.playerId, playerName.value);
+                    history.push(gamePath.getLocationDescriptor());
                 }
             })
         }
@@ -224,15 +241,27 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
             this.services.gameService.createGame(playerName.value).then(maybeCreateGame => {
                 if (maybeCreateGame != null) {
                     const { gameId, playerId } = maybeCreateGame;
-                    history.push(new GamePath(gameId, playerId, playerName.value).getPathName());
+                    history.push(new GamePath(gameId, playerId, playerName.value).getLocationDescriptor());
                 }
             })
         }
     }
 
-    private setAction = (action: HomeAction) => () => this.services.stateService.setHomeAction(action);
+    private setAction = (action: HomeAction) => () => {
+        this.props.history.push(this.getPathForAction(action));
+        this.services.stateService.clearHomeState();
+    }
 
-    private hasValue = (value: string | undefined): value is string => value != null && value.length > 0;
+    private getPathForAction(action: HomeAction) {
+        switch (action) {
+            case HomeAction.JOIN_GAME:
+                return new JoinPath().getLocationDescriptor();
+            case HomeAction.CREATE_GAME:
+                return new CreatePath().getLocationDescriptor();
+            default:
+                return assertNever(action);
+        }
+    }
 
     private onUserNameChange = (userName: string) => this.services.stateService.setUserName(userName);
 

@@ -1,4 +1,4 @@
-import { Pathname, Search, LocationDescriptor } from "history";
+import { Pathname, Search, LocationDescriptorObject } from "history";
 import { isEmpty } from "lodash-es";
 import * as queryString from "query-string";
 import { templatizeQueryParams } from "../common/templatizeQueryParams";
@@ -38,7 +38,7 @@ export abstract class IPath<P = {}, Q = {}> {
         };
     }
 
-    public getLocationDescriptor(): LocationDescriptor<IPathInfo> {
+    public getLocationDescriptor(): LocationDescriptorObject<IPathInfo> {
         return {
             pathname: this.getPathName(),
             search: this.getSearch(),

@@ -9,12 +9,14 @@ import {
     Intent,
     NonIdealState,
     Icon,
+    InputGroup,
 } from "@blueprintjs/core";
 import styles from "./gameConfiguration.module.scss";
 import { ContextType, getServices } from "../../../common/contextProvider";
 import { IGame, Role } from "../../../state/types";
 import { PlayerList } from "../playerList";
 import { handleStringChange } from "../../../common/handleStringChange";
+import { History } from "history";
 import { IconNames } from "@blueprintjs/icons";
 import { removeElementAtIndex } from "../../../common/remove";
 import { assertNever } from "../../../common/assertNever";
@@ -23,8 +25,11 @@ import { CountableValue } from "../../../common/countableValue";
 import { getRoleCounts, getNumGoodRoles } from "../../../common/role";
 import { NullableValue } from "../../../common/nullableValue";
 import { calcNumGoodPlayers } from "../../../common/goodBad";
+import { Clipboard } from "ts-clipboard";
+import { JoinPath } from "../../../paths";
 
 interface IGameConfigurationProps {
+    history: History;
     game: IGame;
     playerId: string;
     gameId: string;
@@ -83,6 +88,8 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
         NO_ROLES_SPECIFIED: "No roles specified",
         GOOD_ROLE: "good role",
         THERE_MUST_BE_EXACTLY: "There must be exactly",
+        INVITE_OTHERS: "Invite others to join this game",
+        COPY_LINK: "Copy link",
     }
     private services = getServices(this.context);
 
@@ -100,9 +107,15 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
 
     public render() {
         const { STRINGS } = GameConfiguration;
+        const { gameId } = this.props;
         return (
             <div>
                 <H2 className={styles.configurationHeader}>{STRINGS.CONFIGURE_GAME}</H2>
+                <div>{STRINGS.INVITE_OTHERS}</div>
+                <ControlGroup className={styles.copyLink}>
+                    <InputGroup disabled={true} value={gameId} />
+                    <Button icon={IconNames.CLIPBOARD} text={STRINGS.COPY_LINK} onClick={this.onCopyGameLink}/>
+                </ControlGroup>
                 <Tabs
                     id={STRINGS.TAB_NAVIGATION}
                     onChange={this.handleTabChange}
@@ -193,6 +206,11 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
 
     private onReorderPlayers = (players: string[]) => this.setState({ players });
 
+    private onCopyGameLink = () => {
+        const { gameId, history } = this.props;
+        Clipboard.copy(window.location.origin + history.createHref(new JoinPath({ gameId }).getLocationDescriptor()));
+    }
+
     private canStartGame() {
         return this.maybeGetErrorMessage() == null;
     }
@@ -208,6 +226,7 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
             return { ...prevState, players: [ ...prevState.players, ...newPlayers ] }
         })
     }
+
 
     private maybeRenderStartGameError() {
         return NullableValue.of(this.maybeGetErrorMessage())
