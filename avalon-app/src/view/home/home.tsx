@@ -24,6 +24,7 @@ import { GamePath, JoinPath, CreatePath } from "../../paths";
 import { NullableValue } from "../../common/nullableValue";
 import QrReader from "react-qr-reader";
 import isUrl from "is-url";
+import { IconNames } from "@blueprintjs/icons";
 
 interface IOwnProps {
     history: History;
@@ -58,6 +59,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
         REQUIRED_TEXT: "(required)",
         HIDE_QR_CODE_READER: "Hide QR code reader",
         SHOW_QR_CODE_READER: "Have a QR code to scan?",
+        CLEAR_GAME_ID: "Clear gameId",
         HASHTAG: "#",
     }
     private services = getServices(this.context);
@@ -206,10 +208,17 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
                     disabled={gameIdQueryParam != null}
                     onChange={handleStringChange(this.onGameIdChange)}
                     placeholder={STRINGS.GAME_PLACEHOLDER}
+                    rightElement={this.maybeRenderClearButton()}
                     value={value}
                 />
             </FormGroup>
         );
+    }
+
+    private maybeRenderClearButton() {
+        if (this.props.gameIdQueryParam != null) {
+            return <Button icon={IconNames.CROSS} minimal={true} onClick={this.setAction(HomeAction.JOIN_GAME)}/>;
+        }
     }
 
     private maybeRenderQRCodeReader() {
@@ -225,9 +234,8 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
                             onScan={this.handleScan}
                             className={styles.qrReader}
                         />
-                        <div className={styles.qrLinkWrapper} key="hide-qr-code-reader">
+                        <div className={styles.qrLink} key="hide-qr-code-reader">
                             <a
-                                className={styles.qrLink}
                                 onClick={this.toggleQRCodeReader}
                                 href={STRINGS.HASHTAG}
                             >
@@ -238,9 +246,8 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
                 );
             } else {
                 return (
-                    <div className={styles.qrLinkWrapper} key="show-qr-code-reader">
+                    <div className={styles.qrLink} key="show-qr-code-reader">
                         <a
-                            className={styles.qrLink}
                             onClick={this.toggleQRCodeReader}
                             href={STRINGS.HASHTAG}
                         >
