@@ -83,7 +83,7 @@ def get_player_knowledge(game, player):
 def sanitize_quest(game, quest, player):
   q = quest.copy()
   q['votes'] = sorted(quest['votes'], key = lambda vote: vote['player']) if quest['remainingVotes'] == 0 else []
-  q['results'] = extract('vote', quest['results']) if quest['remainingResults'] == 0 else [] # TODO sort
+  q['results'] = sorted(extract('vote', quest['results'])) if quest['remainingResults'] == 0 else []
   q['myVote'] = next((vote['vote'] for vote in quest['votes'] if vote['player'] == player['name']), None)
   q['myResult'] = next((result['vote'] for result in quest['results'] if result['player'] == player['name']), None)
   q['status'] = get_quest_status(game, quest)
