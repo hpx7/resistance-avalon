@@ -65,5 +65,5 @@
     "@types/react-router-dom": "^4.3.4",
     "@types/redux": "^3.6.0"
   },
-  "proxy": "https://avalon-heroku.herokuapp.com"
+  "proxy": "https://dnv2dku7j0sac.cloudfront.net"
 }
