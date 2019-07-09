@@ -22,8 +22,10 @@ export class StateService {
         this.dispatch(SetPlayerName.Success.create(userName));
     }
 
-    public setGameId(gameUserId: string) {
-        this.dispatch(SetGameId.Success.create(gameUserId));
+    public setGameId(gameUserId: string | undefined) {
+        this.dispatch(gameUserId == null
+            ? SetGameId.Clear.create(undefined)
+            : SetGameId.Success.create(gameUserId));
     }
 
     public clearHomeState() {

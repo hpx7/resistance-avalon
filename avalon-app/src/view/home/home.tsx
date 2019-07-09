@@ -21,7 +21,6 @@ import { AsyncLoadedValue } from "../../common/redoodle";
 import sharedStyles from "../../styles/styles.module.scss";
 import { assertNever } from "../../common/assertNever";
 import { GamePath, JoinPath, CreatePath } from "../../paths";
-import { NullableValue } from "../../common/nullableValue";
 import QrReader from "react-qr-reader";
 import isUrl from "is-url";
 import { IconNames } from "@blueprintjs/icons";
@@ -80,7 +79,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
     public componentDidUpdate(prevProps: HomeProps) {
         const { gameIdQueryParam } = this.props;
         if (gameIdQueryParam !== prevProps.gameIdQueryParam) {
-            this.services.stateService.setGameId(NullableValue.of(gameIdQueryParam).getOrDefault(""));
+            this.services.stateService.setGameId(gameIdQueryParam);
         }
     }
 
