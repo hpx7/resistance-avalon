@@ -8,6 +8,7 @@ import {
     SetGameId,
     SetGame,
     ClearHomeState,
+    CreateToast,
 } from "../state";
 
 export class StateService {
@@ -35,5 +36,9 @@ export class StateService {
 
     public setDocumentTitle(title: string) {
         this.dispatch(SetTitle.create(title));
+    }
+
+    public showFailToast(toast: string) {
+        this.dispatch(CreateToast.Failure.create(toast));
     }
 }

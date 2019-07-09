@@ -22,6 +22,8 @@ import sharedStyles from "../../styles/styles.module.scss";
 import { assertNever } from "../../common/assertNever";
 import { GamePath, JoinPath, CreatePath } from "../../paths";
 import { NullableValue } from "../../common/nullableValue";
+import QrReader from "react-qr-reader";
+import isUrl from "is-url";
 
 interface IOwnProps {
     history: History;
@@ -31,7 +33,11 @@ interface IOwnProps {
 
 type HomeProps = IOwnProps & IHomeState;
 
-class UnconnectedHome extends React.PureComponent<HomeProps> {
+interface IState {
+    showQRCodeReader: boolean;
+}
+
+class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
     public static contextTypes = ContextType;
     private static STRINGS = {
         AVALON_TITLE: "Avalon",
@@ -49,9 +55,15 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
         ALREADY_HAVE_A_GAME: "Already have a game set up?",
         CREATE_A_GAME: "Create one!",
         JOIN_A_GAME: "Join it!",
-        REQUIRED_TEXT: "(required)"
+        REQUIRED_TEXT: "(required)",
+        HIDE_QR_CODE_READER: "Hide QR code reader",
+        SHOW_QR_CODE_READER: "Have a QR code to scan?",
+        HASHTAG: "#",
     }
     private services = getServices(this.context);
+    public state: IState = {
+        showQRCodeReader: false,
+    };
 
     public componentDidMount() {
         const { STRINGS } = UnconnectedHome;
@@ -99,6 +111,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
             <H2 key="create-game-title">{STRINGS.JOIN_GAME_TITLE}</H2>,
             this.renderUserNameInput(),
             this.renderGameIdInput(),
+            this.maybeRenderQRCodeReader(),
             <Button
                 key="join-game-button"
                 className={styles.actionButton}
@@ -197,6 +210,60 @@ class UnconnectedHome extends React.PureComponent<HomeProps> {
                 />
             </FormGroup>
         );
+    }
+
+    private maybeRenderQRCodeReader() {
+        const { STRINGS } = UnconnectedHome;
+        if (this.props.homeAction === HomeAction.JOIN_GAME && this.props.gameIdQueryParam == null) {
+            if (this.state.showQRCodeReader) {
+                return (
+                    <>
+                        <QrReader
+                            key="qr-code-reader"
+                            delay={300}
+                            onError={this.handleError}
+                            onScan={this.handleScan}
+                            className={styles.qrReader}
+                        />
+                        <div className={styles.qrLinkWrapper} key="hide-qr-code-reader">
+                            <a
+                                className={styles.qrLink}
+                                onClick={this.toggleQRCodeReader}
+                                href={STRINGS.HASHTAG}
+                            >
+                                {STRINGS.HIDE_QR_CODE_READER}
+                            </a>
+                        </div>
+                    </>
+                );
+            } else {
+                return (
+                    <div className={styles.qrLinkWrapper} key="show-qr-code-reader">
+                        <a
+                            className={styles.qrLink}
+                            onClick={this.toggleQRCodeReader}
+                            href={STRINGS.HASHTAG}
+                        >
+                            {STRINGS.SHOW_QR_CODE_READER}
+                        </a>
+                    </div>
+                );
+            }
+        }
+    }
+
+    private toggleQRCodeReader = () => {
+        this.setState(prevState => ({ showQRCodeReader: !prevState.showQRCodeReader }));
+    }
+
+    private handleScan = (data: string | null) => {
+        if (data != null && isUrl(data)) {
+            window.location.href = data;
+        }
+    }
+
+    private handleError = () => {
+        this.services.stateService.showFailToast("Failed to parse QR code");
     }
 
     private getIntentForValue(value: string | undefined) {

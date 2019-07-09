@@ -1,0 +1,13 @@
+@import "~@blueprintjs/core/lib/scss/variables";
+
+.qrCodeWrapper {
+    display: flex;
+    align-items: center;
+}
+
+.qrCode {
+    background: $dark-gray3;
+    padding: $pt-grid-size;
+    border-radius: $pt-border-radius;
+    margin: $pt-grid-size auto;
+}

@@ -22,6 +22,10 @@
     }
 }
 
-.addRole, .dndHelper, .configurationError, .copyLink {
+.configurationContent {
+    margin: $pt-grid-size 0 2 * $pt-grid-size 0;
+}
+
+.addRole, .dndHelper, .configurationError {
     margin: $pt-grid-size 0;
 }

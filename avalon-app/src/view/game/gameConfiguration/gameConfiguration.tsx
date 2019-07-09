@@ -10,6 +10,7 @@ import {
     NonIdealState,
     Icon,
     InputGroup,
+    Divider,
 } from "@blueprintjs/core";
 import styles from "./gameConfiguration.module.scss";
 import { ContextType, getServices } from "../../../common/contextProvider";
@@ -27,6 +28,7 @@ import { NullableValue } from "../../../common/nullableValue";
 import { calcNumGoodPlayers } from "../../../common/goodBad";
 import { Clipboard } from "ts-clipboard";
 import { JoinPath } from "../../../paths";
+import { QRCode } from "../qrcode/qrcode";
 
 interface IGameConfigurationProps {
     history: History;
@@ -38,6 +40,7 @@ interface IGameConfigurationProps {
 enum ConfigurationTab {
     PLAYERS = "players",
     ROLES = "roles",
+    INVITE = "invite",
 }
 
 interface IState {
@@ -63,11 +66,13 @@ const ROLES: Role[] = Object.keys(roleRecord) as Role[];
 const MIN_PLAYER_COUNT = 5;
 const MAX_PLAYER_COUNT = 10;
 const ROLE_LIMIT = 1;
+const DARK_GRAY_3 = "#293742";
+const WHITE = "#FFFFFF";
 
 export class GameConfiguration extends React.PureComponent<IGameConfigurationProps, IState> {
     public static contextTypes = ContextType;
     public state: IState = {
-        selectedTabId: ConfigurationTab.PLAYERS,
+        selectedTabId: ConfigurationTab.INVITE,
         roles: [],
         selectedRole: ROLES[0],
         players: [],
@@ -75,6 +80,7 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
     private static STRINGS = {
         CONFIGURE_GAME: "Configure game",
         PLAYER_ORDER: "Player order",
+        INVITE: "Invite",
         ROLES: "Roles",
         ADD_ROLE: "Add role",
         START_GAME: "Start game",
@@ -107,24 +113,20 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
 
     public render() {
         const { STRINGS } = GameConfiguration;
-        const { gameId } = this.props;
         return (
             <div>
                 <H2 className={styles.configurationHeader}>{STRINGS.CONFIGURE_GAME}</H2>
-                <div>{STRINGS.INVITE_OTHERS}</div>
-                <ControlGroup className={styles.copyLink}>
-                    <InputGroup disabled={true} value={gameId} />
-                    <Button icon={IconNames.CLIPBOARD} text={STRINGS.COPY_LINK} onClick={this.onCopyGameLink}/>
-                </ControlGroup>
                 <Tabs
                     id={STRINGS.TAB_NAVIGATION}
                     onChange={this.handleTabChange}
                     selectedTabId={this.state.selectedTabId}
                 >
+                    <Tab id={ConfigurationTab.INVITE} title={STRINGS.INVITE} />
                     <Tab id={ConfigurationTab.PLAYERS} title={STRINGS.PLAYER_ORDER} />
                     <Tab id={ConfigurationTab.ROLES} title={STRINGS.ROLES} />
                 </Tabs>
-                {this.renderContent()}
+                <div className={styles.configurationContent}>{this.renderContent()}</div>
+                <Divider />
                 {this.maybeRenderStartGameError()}
                 <Button
                     intent={Intent.SUCCESS}
@@ -138,12 +140,12 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
 
     private renderContent() {
         const { players, selectedTabId, selectedRole } = this.state;
-        const { game } = this.props;
+        const { game, gameId } = this.props;
         const { STRINGS } = GameConfiguration;
         switch (selectedTabId) {
             case ConfigurationTab.PLAYERS:
                 return (
-                    <div>
+                    <>
                         <PlayerList
                             players={players}
                             game={game}
@@ -153,11 +155,11 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
                             onReorderPlayers={this.onReorderPlayers}
                         />
                         <div className={styles.dndHelper}>{STRINGS.DND_HELPER_TEXT}</div>
-                    </div>
+                    </>
                 );
             case ConfigurationTab.ROLES:
                 return  (
-                    <div>
+                    <>
                         {this.renderRoles()}
                         <ControlGroup fill={true} className={styles.addRole}>
                             <HTMLSelect
@@ -167,8 +169,19 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
                             />
                             <Button intent={Intent.PRIMARY} text={STRINGS.ADD_ROLE} onClick={this.addRole} />
                         </ControlGroup>
-                    </div>
+                    </>
                 );
+            case ConfigurationTab.INVITE:
+                return (
+                    <>
+                        <div>{STRINGS.INVITE_OTHERS}</div>
+                        <QRCode url={this.getCopyLink()} backgroundColor={DARK_GRAY_3} foregroundColor={WHITE} />
+                        <ControlGroup className={styles.copyLink} fill={true}>
+                            <InputGroup disabled={true} value={gameId} />
+                            <Button icon={IconNames.CLIPBOARD} text={STRINGS.COPY_LINK} onClick={this.onCopyGameLink}/>
+                        </ControlGroup>
+                    </>
+                )
             default:
                 return assertNever(selectedTabId)
         }
@@ -207,8 +220,12 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
     private onReorderPlayers = (players: string[]) => this.setState({ players });
 
     private onCopyGameLink = () => {
+        Clipboard.copy(this.getCopyLink());
+    }
+
+    private getCopyLink = () => {
         const { gameId, history } = this.props;
-        Clipboard.copy(window.location.origin + history.createHref(new JoinPath({ gameId }).getLocationDescriptor()));
+        return window.location.origin + history.createHref(new JoinPath({ gameId }).getLocationDescriptor())
     }
 
     private canStartGame() {
