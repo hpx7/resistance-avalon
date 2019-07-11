@@ -48,8 +48,6 @@ interface IState {
 
 type GameProps = IOwnProps & IGameState;
 
-const REFRESH_GAME_STATE_INTERVAL_IN_MS = 1000;
-
 export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     public static contextTypes = ContextType;
     public state: IState = {
@@ -96,10 +94,6 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     private services = getServices(this.context);
     private interval: number | undefined;
 
-    public componentDidMount() {
-        this.startFetchingGameState();
-    }
-
     public componentDidUpdate() {
         const { game, gameAction } = this.props;
         const { STRINGS } = UnconnectedGame;
@@ -125,7 +119,10 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     public componentWillUnmount() {
-        this.maybeStopFetchingGameState();
+        const { game } = this.props;
+        if (AsyncLoadedValue.isReady(game)) {
+            this.services.gameService.leaveGame(game.value.id);
+        }
         this.services.stateService.clearGame();
     }
 
@@ -514,10 +511,9 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     private onProposeQuest = (game: IGame, questId: string) => () => {
         const { playerId, playerName } = this.props;
         if (this.canProposeQuest(game)) {
-            this.services.gameService.proposeQuest(questId, playerId, playerName, {
-                proposal: this.state.questMembers,
+            this.services.gameService.proposeQuest(questId, playerId, playerName, this.state.questMembers).then(() => {
+                this.setState({ questMembers: [] });
             });
-            this.setState({ questMembers: [] });
         }
     }
 
@@ -582,26 +578,6 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     private setAction = (action: GameAction) => () => this.services.stateService.setGameAction(action);
-
-    private startFetchingGameState() {
-        this.interval = window.setInterval(
-            () => {
-                const { gameId, playerId } = this.props;
-                this.services.gameService.getGameState(gameId, playerId)
-                    .then(succeeded => {
-                        if (!succeeded) {
-                            this.maybeStopFetchingGameState();
-                        }
-                    });
-            },
-            REFRESH_GAME_STATE_INTERVAL_IN_MS);
-    }
-
-    private maybeStopFetchingGameState() {
-        if (this.interval != null) {
-            window.clearInterval(this.interval);
-        }
-    }
 
     private setDocumentTitleBasedOnQuestAttempt = (questAttempt: IQuestAttempt) => {
         this.services.stateService.setDocumentTitle(this.getTitleFOrQuestAttempt(questAttempt));

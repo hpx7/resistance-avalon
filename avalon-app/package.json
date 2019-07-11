@@ -2,6 +2,7 @@
   "name": "avalon-app",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "dependencies": {
     "@blueprintjs/core": "^3.16.2",
     "@blueprintjs/icons": "^3.9.0",
@@ -10,7 +11,6 @@
     "@types/react": "16.8.22",
     "@types/react-dom": "16.8.4",
     "classnames": "^2.2.6",
-    "conjure-client": "^1.5.0",
     "is-url": "^1.2.4",
     "lodash-es": "^4.17.14",
     "node-sass": "^4.12.0",
@@ -28,6 +28,7 @@
     "redoodle": "^2.3.2",
     "redux": "^3.7.2",
     "redux-devtools-extension": "^2.13.8",
+    "socket.io-client": "^2.2.0",
     "ts-clipboard": "^1.0.17",
     "typescript": "3.5.2"
   },
@@ -63,7 +64,8 @@
     "@types/react-qr-reader": "^2.1.2",
     "@types/react-redux": "^5.0.20",
     "@types/react-router-dom": "^4.3.4",
-    "@types/redux": "^3.6.0"
+    "@types/redux": "^3.6.0",
+    "@types/socket.io-client": "^1.4.32"
   },
-  "proxy": "https://dnv2dku7j0sac.cloudfront.net"
+  "proxy": "https://localhost:3000"
 }

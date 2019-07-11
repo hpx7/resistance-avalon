@@ -1,18 +1,15 @@
 import { GameService, IGameService } from "../api/game";
-import { DefaultHttpApiBridge } from "conjure-client";
 import { IEndpoints, IApplicationApi } from "../state";
-import { MockGameService } from "../mock/mockGameService";
+import io from 'socket.io-client';
+import { createUserAgent } from "./userAgent";
 
+const APPLICATION_NAME = "avalon-app";
 const APPLICATION_VERSION = "0.0.0";
 
 export function createApi(endpoints: IEndpoints): IApplicationApi {
-    const userAgent = { productName: "autopilot", productVersion: APPLICATION_VERSION };
+    const agent = createUserAgent(APPLICATION_NAME, APPLICATION_VERSION);
     const gameServiceApi = getApiOrThrow(endpoints, "gameServiceApi");
-    const gameService: IGameService = gameServiceApi === "mock"
-        ? new MockGameService()
-        : new GameService(new DefaultHttpApiBridge({ baseUrl: gameServiceApi, userAgent }),
-    );
-
+    const gameService: IGameService = new GameService(io(gameServiceApi, { agent }));
     return { gameService };
 }
 

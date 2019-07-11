@@ -1,5 +1,4 @@
 import { IGame, Role, Vote } from "../state";
-import { IHttpApiBridge, MediaType, IHttpEndpointOptions } from "conjure-client";
 
 interface IBaseResponse {
     success: boolean;
@@ -22,29 +21,22 @@ export interface IVoteOnQuestProposalResponse extends IBaseResponse {}
 
 export interface IVoteOnQuestResponse extends IBaseResponse {}
 
-export interface IStartGameRequest {
-    roleList: Role[];
-    playerOrder: string[];
-}
-
-export interface IProposeQuestRequest {
-    proposal: string[];
-}
-
 export interface IGameService {
     createGame(playerName: string): Promise<ICreateGameResponse>;
     joinGame(gameId: string, playerName: string): Promise<IJoinGameResponse>;
+    leaveGame(gameId: string): void;
     startGame(
         gameId: string,
         playerId: string,
         playerName: string,
-        startGameRequest: IStartGameRequest): Promise<IStartGameResponse>;
-    getGameState(gameId: string, userId: string): Promise<IGame>;
+        roleList: Role[],
+        playerOrder: string[]): Promise<IStartGameResponse>;
+    registerToGameChanges(callback: (game:IGame) => void): void;
     proposeQuest(
         questId: string,
         playerId: string,
         playerName: string,
-        proposeQuestRequest: IProposeQuestRequest): Promise<IProposeQuestResponse>;
+        proposal: string[]): Promise<IProposeQuestResponse>;
     voteOnQuestProposal(
         questId: string,
         playerId: string,
@@ -58,35 +50,23 @@ export interface IGameService {
 }
 
 export class GameService implements IGameService {
-    private static BASE_HTTP_ENDPOINT_OPTIONS: IHttpEndpointOptions = {
-        endpointPath: "base-path",
-        headers: {},
-        method: "POST",
-        pathArguments: [],
-        queryArguments: {},
-        requestMediaType: MediaType.APPLICATION_JSON,
-        responseMediaType: MediaType.APPLICATION_JSON,
-    }
-
-    constructor(private bridge: IHttpApiBridge) {}
+    constructor(private socket: SocketIOClient.Socket) {}
 
     public createGame(playerName: string): Promise<ICreateGameResponse> {
-        return this.bridge.callEndpoint<ICreateGameResponse>({
-            ...GameService.BASE_HTTP_ENDPOINT_OPTIONS,
-            data: undefined,
-            endpointName: "createGame",
-            endpointPath: "/api/create/{playerName}",
-            pathArguments: [ playerName ],
+        return new Promise<ICreateGameResponse>((resolve, reject) => {
+            this.socket.emit("createGame", playerName, this.emitCallback(resolve, reject));
         });
     }
 
     public joinGame(gameId: string, playerName: string): Promise<IJoinGameResponse> {
-        return this.bridge.callEndpoint<IJoinGameResponse>({
-            ...GameService.BASE_HTTP_ENDPOINT_OPTIONS,
-            data: undefined,
-            endpointName: "joinGame",
-            endpointPath: "/api/join/{gameId}/{playerName}",
-            pathArguments: [ gameId, playerName],
+        return new Promise<IJoinGameResponse>((resolve, reject) => {
+            this.socket.emit("joinGame", gameId, playerName, this.emitCallback(resolve, reject));
+        });
+    }
+
+    public leaveGame(gameId: string): Promise<IJoinGameResponse> {
+        return new Promise<IJoinGameResponse>((resolve, reject) => {
+            this.socket.emit("leaveGame", gameId, this.emitCallback(resolve, reject));
         });
     }
 
@@ -94,38 +74,37 @@ export class GameService implements IGameService {
         gameId: string,
         playerId: string,
         playerName: string,
-        startGameRequest: IStartGameRequest): Promise<IStartGameResponse> {
-        return this.bridge.callEndpoint<IStartGameResponse>({
-            ...GameService.BASE_HTTP_ENDPOINT_OPTIONS,
-            data: startGameRequest,
-            endpointName: "startGame",
-            endpointPath: "/api/start/{gameId}/{playerId}/{playerName}",
-            pathArguments: [ gameId, playerId, playerName ],
+        roleList: Role[],
+        playerOrder: string[]): Promise<IStartGameResponse> {
+        return new Promise<IStartGameResponse>((resolve, reject) => {
+            this.socket.emit(
+                "startGame",
+                gameId,
+                playerId,
+                playerName,
+                roleList,
+                playerOrder,
+                this.emitCallback(resolve, reject));
         });
     }
 
-    public getGameState(gameId: string, playerId: string): Promise<IGame> {
-        return this.bridge.callEndpoint<IGame>({
-            ...GameService.BASE_HTTP_ENDPOINT_OPTIONS,
-            data: undefined,
-            method: "GET",
-            endpointName: "getGameState",
-            endpointPath: "/api/state/{gameId}/{playerId}",
-            pathArguments: [ gameId, playerId ],
-        });
+    public registerToGameChanges(callback: (game: IGame) => void): void {
+        this.socket.on("game", callback);
     }
 
     public proposeQuest(
         questId: string,
         playerId: string,
         playerName: string,
-        proposeQuestRequest: IProposeQuestRequest): Promise<IProposeQuestResponse> {
-        return this.bridge.callEndpoint<IProposeQuestResponse>({
-            ...GameService.BASE_HTTP_ENDPOINT_OPTIONS,
-            data: proposeQuestRequest,
-            endpointName: "proposeQuest",
-            endpointPath: "/api/propose/{questId}/{playerId}/{playerName}",
-            pathArguments: [ questId, playerId, playerName ],
+        proposal: string[]): Promise<IProposeQuestResponse> {
+        return new Promise<IProposeQuestResponse>((resolve, reject) => {
+            this.socket.emit(
+                "proposeQuest",
+                questId,
+                playerId,
+                playerName,
+                proposal,
+                this.emitCallback(resolve, reject));
         });
     }
 
@@ -134,12 +113,14 @@ export class GameService implements IGameService {
         playerId: string,
         playerName: string,
         vote: Vote): Promise<IVoteOnQuestProposalResponse> {
-        return this.bridge.callEndpoint<IVoteOnQuestProposalResponse>({
-            ...GameService.BASE_HTTP_ENDPOINT_OPTIONS,
-            data: undefined,
-            endpointName: "voteOnQuestProposal",
-            endpointPath: "/api/proposal/vote/{questId}/{playerId}/{playerName}/{vote}",
-            pathArguments: [ questId, playerId, playerName, vote ],
+        return new Promise<IVoteOnQuestProposalResponse>((resolve, reject) => {
+            this.socket.emit(
+                "proposeQuest",
+                questId,
+                playerId,
+                playerName,
+                vote,
+                this.emitCallback(resolve, reject));
         });
     }
 
@@ -148,12 +129,24 @@ export class GameService implements IGameService {
         playerId: string,
         playerName: string,
         vote: Vote): Promise<IVoteOnQuestResponse> {
-        return this.bridge.callEndpoint<IVoteOnQuestResponse>({
-            ...GameService.BASE_HTTP_ENDPOINT_OPTIONS,
-            data: undefined,
-            endpointName: "voteOnQuest",
-            endpointPath: "/api/quest/vote/{questId}/{playerId}/{playerName}/{vote}",
-            pathArguments: [ questId, playerId, playerName, vote ],
+        return new Promise<IVoteOnQuestProposalResponse>((resolve, reject) => {
+            this.socket.emit(
+                "voteOnQuest",
+                questId,
+                playerId,
+                playerName,
+                vote,
+                this.emitCallback(resolve, reject));
         });
     }
+
+    private emitCallback = <T extends IBaseResponse>(
+        resolve: (value?: T | PromiseLike<T>) => void,
+        reject: (reason?: any) => void) => (response: T) => {
+            if (response.success) {
+                resolve(response);
+            } else {
+                reject(response);
+            }
+    };
 }

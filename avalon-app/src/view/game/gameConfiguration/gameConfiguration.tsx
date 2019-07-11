@@ -297,10 +297,7 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
         } = this.props;
         const { players, roles } = this.state;
         if (this.canStartGame()) {
-            this.services.gameService.startGame(gameId, playerId, myName, {
-                roleList: roles,
-                playerOrder: players,
-            });
+            this.services.gameService.startGame(gameId, playerId, myName, roles, players);
         }
     }
 }
