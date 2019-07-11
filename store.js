@@ -32,7 +32,9 @@ exports.init = (onReady, onUpdate) => {
     const games = client.db().collection('games')
     onReady(GameModel(games))
     games.watch({fullDocument: 'updateLookup'}).on('change', data => {
-      onUpdate(data.fullDocument)
+      const game = data.fullDocument
+      const states = flatMap(game.players, player => ({[player.id]: getState(game, player)}))
+      onUpdate(states)
     })
   })
   .catch(err => {
@@ -182,7 +184,70 @@ const createQuest = (roundNumber, attemptNumber, leader, numPlayers) => ({
 })
 
 const getNextLeader = (game, quest) => {
-  const players = game.players
+  const players = game.players.sort((a, b) => a.order.localeCompare(b.order))
   const idx = players.findIndex(player => player.name === quest.leader)
   return players[(idx + 1) % players.length].name
+}
+
+const getState = (game, player) => {
+  const players = game.players.sort((a, b) => a.order.localeCompare(b.order))
+  return {
+    'id': game.id,
+    'creator': game.creator,
+    'players': players.map(player => player.name),
+    'roles': flatMap(players, player => ({[player.role]: !evilRoles.contains(role)})),
+    'questConfigurations': questConfigurations.get(players.length),
+    'myName': player.name,
+    'myRole': player.role,
+    'knowledge': getPlayerKnowledge(game, player),
+    'questAttempts': game.quests.map(quest => sanitizeQuest(game, quest, player)),
+    'status': getGameStatus(game)
+  }
+}
+
+const getPlayerKnowledge = (game, player) => {
+  const knowledge = roleKnowledge[player.role] || []
+  const knownPlayers = game.players.filter(p => p.id === player.id && knowledge.contains(p.role))
+  return {
+    players: knownPlayers.map(p => p.name),
+    roles: flatMap(knownPlayers, player => ({[player.role]: !evilRoles.contains(role)}))
+  }
+}
+
+const sanitizeQuest = (game, quest, player) => {
+  const q = Object.assign({}, quest)
+  q.votes = quest.remainingVotes === 0 ? quest.votes.sort((a, b) => a.player.localeCompare(b.player)) : []
+  q.results = quest.remainingResults === 0 ? quest.results.map(result => result.vote).sort() : []
+  q.myVote = quest.votes.find(vote => vote.player === player.name)
+  q.myResult = quest.results.find(result => result.player === player.name)
+  q.status = getQuestStatus(game, quest)
+  delete q.voteStatus
+  delete q.failures
+  return q
+}
+
+const getGameStatus = (game) => {
+  if (game.quests === [])
+    return 'not_started'
+  if (game.quests.filter(quest => getQuestStatus(game, quest) === 'passed').length > 2)
+    return 'good_won'
+  if (game.quests.filter(quest => getQuestStatus(game, quest) === 'failed').length > 2)
+    return 'evil_won'
+  return 'in_progress'
+}
+
+const getQuestStatus = (game, quest) => {
+  if (!quest.members)
+    return 'proposing_quest'
+  if (quest.remainingVotes > 0)
+    return 'voting_for_proposal'
+  if (quest.voteStatus <= 0)
+    return 'proposal_rejected'
+  if (quest.remainingResults > 0)
+    return 'voting_in_quest'
+  return didQuestPass(game, quest) ? 'passed' : 'failed'
+}
+
+const didQuestPass = (game, quest) => {
+  return questfailures === 0 || (questroundNumber === 4 && game.players.length > 6 && quest.failures === 1)
 }

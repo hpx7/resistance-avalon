@@ -14,7 +14,7 @@ store.init(
         const playerId = randomId()
         model.createGame(gameId, playerId, playerName, (success) => {
           if (success) {
-            socket.join(gameId)
+            socket.join(gameId + playerId)
           }
           fn({gameId, playerId, success})
         })
@@ -25,7 +25,7 @@ store.init(
         const playerId = randomId()
         model.joinGame(gameId, playerId, playerName, (success) => {
           if (success) {
-            socket.join(gameId)
+            socket.join(gameId + playerId)
           }
           fn({playerId, success})
         })
@@ -51,8 +51,13 @@ store.init(
         model.voteInQuest(questId, playerId, playerName, vote, fn)
       })
 
-      socket.on('leaveGame', (gameId, fn) => {
-        console.log(socket.id + ' leaveGame ' + gameId)
+      socket.on('subscribe', (gameId, playerId, fn) => {
+        console.log(socket.id + ' subscribe ' + gameId + ' ' + playerId)
+        socket.join(gameId + playerId)
+      })
+
+      socket.on('unsubscribe', (gameId, playerId, fn) => {
+        console.log(socket.id + ' unsubscribe ' + gameId + ' ' + playerId)
         socket.leave(gameId)
         fn({})
       })
@@ -62,9 +67,9 @@ store.init(
       })
     })
   },
-  (game) => {
-    console.log('update ' + game.id)
-    io.to(game.id).emit('game', game)
+  (states) => {
+    console.log('received update')
+    Object.entries(states).forEach(([playerId, state]) => io.to(state.id + playerId).emit('game', state))
   }
 )
 
