@@ -2,3 +2,4 @@
 __pycache__/
 *.pyc
 .elasticbeanstalk/
+node_modules/
