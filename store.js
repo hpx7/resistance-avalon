@@ -235,7 +235,7 @@ const sanitizeQuest = (game, quest, player) => {
 }
 
 const getGameStatus = (game) => {
-  if (game.quests === [])
+  if (game.quests.length === 0)
     return 'not_started'
   if (game.quests.filter(quest => getQuestStatus(game, quest) === 'passed').length > 2)
     return 'good_won'
