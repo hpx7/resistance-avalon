@@ -16,7 +16,7 @@ store.init(
           if (success) {
             socket.join(gameId)
           }
-          fn(gameId, playerId, success)
+          fn({gameId, playerId, success})
         })
       })
 
@@ -27,7 +27,7 @@ store.init(
           if (success) {
             socket.join(gameId)
           }
-          fn(playerId, success)
+          fn({playerId, success})
         })
       })
 
@@ -54,7 +54,7 @@ store.init(
       socket.on('leaveGame', (gameId, fn) => {
         console.log(socket.id + ' leaveGame ' + gameId)
         socket.leave(gameId)
-        fn()
+        fn({})
       })
 
       socket.on('disconnect', () => {
