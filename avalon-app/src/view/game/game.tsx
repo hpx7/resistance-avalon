@@ -22,7 +22,7 @@ import { IconNames, IconName } from "@blueprintjs/icons";
 import { IApplicationState, IGameState } from "../../state";
 import { connect } from "react-redux";
 import { History } from "history";
-import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, GameStatus, Vote } from "../../state/types";
+import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, GameStatus, Vote, IGameMetadata } from "../../state/types";
 import { times, constant, random, maxBy } from "lodash-es";
 import { PlayerList } from "./playerList";
 import { assertNever } from "../../common/assertNever";
@@ -34,6 +34,7 @@ import sharedStyles from "../../styles/styles.module.scss";
 import { TernaryValue } from "../../common/ternary";
 import { voteToString } from "../../common/vote";
 import { JoinPath } from "../../paths";
+import { Supplier } from "../../common/supplier";
 
 interface IOwnProps {
     history: History;
@@ -92,7 +93,10 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         GOOD_CANNOT_FAIL: "Sorry, good roles cannot fail quests"
     }
     private services = getServices(this.context);
-    private interval: number | undefined;
+
+    public componentDidMount() {
+        this.services.gameService.subscribeToGame(this.getGameMetadataSupplier());
+    }
 
     public componentDidUpdate() {
         const { game, gameAction } = this.props;
@@ -121,7 +125,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     public componentWillUnmount() {
         const { game } = this.props;
         if (AsyncLoadedValue.isReady(game)) {
-            this.services.gameService.leaveGame(game.value.id);
+            this.services.gameService.unsubscribFromGame(game.value.id);
         }
         this.services.stateService.clearGame();
     }
@@ -599,6 +603,15 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                 return STRINGS.QUEST_PASSED_TITLE;
             case QuestAttemptStatus.FAILED:
                 return STRINGS.QUEST_FAILED_TITLE;
+        }
+    }
+
+    private getGameMetadataSupplier = (): Supplier<IGameMetadata> => {
+        return {
+            get: () => {
+                const { gameId, playerId } = this.props;
+                return { gameId, playerId };
+            }
         }
     }
 }

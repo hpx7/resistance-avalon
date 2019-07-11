@@ -105,3 +105,8 @@ export interface IEndpoints {
 export interface IApplicationApi {
     gameService: IGameService;
 }
+
+export interface IGameMetadata {
+    gameId: string;
+    playerId: string;
+}

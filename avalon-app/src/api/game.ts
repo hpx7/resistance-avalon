@@ -1,4 +1,6 @@
-import { IGame, Role, Vote } from "../state";
+import { IGame, Role, Vote, IGameMetadata } from "../state";
+import { Supplier } from "../common/supplier";
+import { NullableValue } from "../common/nullableValue";
 
 interface IBaseResponse {
     success: boolean;
@@ -24,14 +26,15 @@ export interface IVoteOnQuestResponse extends IBaseResponse {}
 export interface IGameService {
     createGame(playerName: string): Promise<ICreateGameResponse>;
     joinGame(gameId: string, playerName: string): Promise<IJoinGameResponse>;
-    leaveGame(gameId: string): void;
+    unsubscribFromGameChanges(gameId: string): void;
     startGame(
         gameId: string,
         playerId: string,
         playerName: string,
         roleList: Role[],
         playerOrder: string[]): Promise<IStartGameResponse>;
-    registerToGameChanges(callback: (game:IGame) => void): void;
+    registerListener(callback: (game:IGame) => void): void;
+    subscribeToGameChanges(supplier: Supplier<IGameMetadata | undefined>, callback: (game:IGame) => void): void;
     proposeQuest(
         questId: string,
         playerId: string,
@@ -64,9 +67,9 @@ export class GameService implements IGameService {
         });
     }
 
-    public leaveGame(gameId: string): Promise<IJoinGameResponse> {
+    public unsubscribFromGameChanges(gameId: string): Promise<IJoinGameResponse> {
         return new Promise<IJoinGameResponse>((resolve, reject) => {
-            this.socket.emit("leaveGame", gameId, this.emitCallback(resolve, reject));
+            this.socket.emit("unsubscribe", gameId, this.emitCallback(resolve, reject));
         });
     }
 
@@ -88,8 +91,20 @@ export class GameService implements IGameService {
         });
     }
 
-    public registerToGameChanges(callback: (game: IGame) => void): void {
+    public registerListener(callback: (game: IGame) => void): void {
         this.socket.on("game", callback);
+    }
+
+    public subscribeToGameChanges(
+        supplier: Supplier<IGameMetadata | undefined>,
+        callback: (game: IGame) => void): void {
+        this.socket.on("connect", () => {
+            NullableValue.of(supplier.get())
+                .map(({ gameId, playerId }) => {
+                    this.socket.emit("subscribe", gameId, playerId, callback);
+                    return null;
+                });
+        })
     }
 
     public proposeQuest(
