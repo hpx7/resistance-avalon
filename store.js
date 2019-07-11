@@ -132,12 +132,13 @@ const GameModel = (games) => ({
     fn({success: false})
   },
   fetchState: (gameId, playerId, fn) => {
-    games.findOne({id: gameId, 'players.id': playerId}, (err, result) => {
+    games.findOne({id: gameId, 'players.id': playerId}, (err, game) => {
       if (err) {
         console.error(err)
         fn(null)
       } else {
-        fn(result)
+        const player = game.players.find(player => player.id === playerId)
+        fn(getState(game, player))
       }
     })
   }
