@@ -59,7 +59,7 @@ store.init(
 
       socket.on('unsubscribe', (gameId, playerId, fn) => {
         console.log(socket.id + ' unsubscribe ' + gameId + ' ' + playerId)
-        socket.leave(gameId)
+        socket.leave(gameId + playerId)
         fn({})
       })
 
