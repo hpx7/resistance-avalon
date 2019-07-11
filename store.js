@@ -162,6 +162,14 @@ const flatMap = (a, mapFn) => {
   return result
 }
 
+const cmp = (key) => (a, b) => {
+  if (a[key] > b[key])
+    return 1
+  if (a[key] < b[key])
+    return -1
+  return 0
+}
+
 const randomId = () => Math.random().toString(36).substring(2, 12)
 
 const createPlayer = (playerId, playerName) => ({
@@ -184,19 +192,19 @@ const createQuest = (roundNumber, attemptNumber, leader, numPlayers) => ({
 })
 
 const getNextLeader = (game, quest) => {
-  const players = game.players.sort((a, b) => a.order.localeCompare(b.order))
+  const players = game.players.sort(cmp('order'))
   const idx = players.findIndex(player => player.name === quest.leader)
   return players[(idx + 1) % players.length].name
 }
 
 const getState = (game, player) => {
-  const players = game.players.sort((a, b) => a.order.localeCompare(b.order))
+  const players = game.players.sort(cmp('order'))
   return {
     'id': game.id,
     'creator': game.creator,
     'players': players.map(player => player.name),
-    'roles': flatMap(players, player => ({[player.role]: !evilRoles.contains(role)})),
-    'questConfigurations': questConfigurations.get(players.length),
+    'roles': game.quests.length ? flatMap(players, player => ({[player.role]: !evilRoles.includes(role)})) : {},
+    'questConfigurations': questConfigurations[players.length],
     'myName': player.name,
     'myRole': player.role,
     'knowledge': getPlayerKnowledge(game, player),
@@ -207,16 +215,16 @@ const getState = (game, player) => {
 
 const getPlayerKnowledge = (game, player) => {
   const knowledge = roleKnowledge[player.role] || []
-  const knownPlayers = game.players.filter(p => p.id === player.id && knowledge.contains(p.role))
+  const knownPlayers = game.players.filter(p => p.id === player.id && knowledge.includes(p.role))
   return {
     players: knownPlayers.map(p => p.name),
-    roles: flatMap(knownPlayers, player => ({[player.role]: !evilRoles.contains(role)}))
+    roles: flatMap(knownPlayers, player => ({[player.role]: !evilRoles.includes(role)}))
   }
 }
 
 const sanitizeQuest = (game, quest, player) => {
   const q = Object.assign({}, quest)
-  q.votes = quest.remainingVotes === 0 ? quest.votes.sort((a, b) => a.player.localeCompare(b.player)) : []
+  q.votes = quest.remainingVotes === 0 ? quest.votes.sort(cmp('player')) : []
   q.results = quest.remainingResults === 0 ? quest.results.map(result => result.vote).sort() : []
   q.myVote = quest.votes.find(vote => vote.player === player.name)
   q.myResult = quest.results.find(result => result.player === player.name)
