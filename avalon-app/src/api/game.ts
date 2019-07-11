@@ -6,10 +6,17 @@ interface IBaseResponse {
     success: boolean;
 }
 
-export interface ICreateGameResponse extends IBaseResponse {
+interface IFailureResponse extends IBaseResponse {
+    success: false;
+}
+
+interface ICreateGameSuccessResponse extends IBaseResponse {
+    success: true;
     gameId: string;
     playerId: string;
 }
+
+export type ICreateGameResponse = ICreateGameSuccessResponse | IFailureResponse;
 
 export interface IJoinGameResponse extends IBaseResponse {
     playerId: string;
@@ -23,18 +30,28 @@ export interface IVoteOnQuestProposalResponse extends IBaseResponse {}
 
 export interface IVoteOnQuestResponse extends IBaseResponse {}
 
+
+interface IGameStateSuccessResponse extends IBaseResponse {
+    success: true;
+    game: IGame;
+}
+
+export type IGameStateResponse = IGameStateSuccessResponse | IFailureResponse;
+
 export interface IGameService {
     createGame(playerName: string): Promise<ICreateGameResponse>;
     joinGame(gameId: string, playerName: string): Promise<IJoinGameResponse>;
-    unsubscribFromGameChanges(gameId: string): void;
+    unsubscribFromGameChanges(gameId: string, playerId: string): void;
     startGame(
         gameId: string,
         playerId: string,
         playerName: string,
         roleList: Role[],
         playerOrder: string[]): Promise<IStartGameResponse>;
-    registerListener(callback: (game:IGame) => void): void;
-    subscribeToGameChanges(supplier: Supplier<IGameMetadata | undefined>, callback: (game:IGame) => void): void;
+    registerListener(callback: (game: IGame) => void): void;
+    subscribeToGameChanges(
+        supplier: Supplier<IGameMetadata | undefined>,
+        callback: (game: IGameStateResponse) => void): void;
     proposeQuest(
         questId: string,
         playerId: string,
@@ -67,9 +84,9 @@ export class GameService implements IGameService {
         });
     }
 
-    public unsubscribFromGameChanges(gameId: string): Promise<IJoinGameResponse> {
+    public unsubscribFromGameChanges(gameId: string, playerId: string): Promise<IJoinGameResponse> {
         return new Promise<IJoinGameResponse>((resolve, reject) => {
-            this.socket.emit("unsubscribe", gameId, this.emitCallback(resolve, reject));
+            this.socket.emit("unsubscribe", gameId, playerId, this.emitCallback(resolve, reject));
         });
     }
 
@@ -97,7 +114,7 @@ export class GameService implements IGameService {
 
     public subscribeToGameChanges(
         supplier: Supplier<IGameMetadata | undefined>,
-        callback: (game: IGame) => void): void {
+        callback: (game: IGameStateResponse) => void): void {
         this.socket.on("connect", () => {
             NullableValue.of(supplier.get())
                 .map(({ gameId, playerId }) => {

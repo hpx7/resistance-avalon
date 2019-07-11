@@ -123,10 +123,8 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     public componentWillUnmount() {
-        const { game } = this.props;
-        if (AsyncLoadedValue.isReady(game)) {
-            this.services.gameService.unsubscribFromGame(game.value.id);
-        }
+        const { gameId, playerId } = this.props;
+        this.services.gameService.unsubscribFromGame(gameId, playerId);
         this.services.stateService.clearGame();
     }
 

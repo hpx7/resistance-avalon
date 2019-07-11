@@ -31,13 +31,15 @@ export class GameService {
         this.gameService.registerListener(game => {
             this.store.dispatch(SetGame.Success(game));
         });
-        this.gameService.subscribeToGameChanges(supplier, game => {
-            this.store.dispatch(SetGame.Success(game));
+        this.gameService.subscribeToGameChanges(supplier, gameStateResponse => {
+            this.store.dispatch(gameStateResponse.success
+                ? SetGame.Success(gameStateResponse.game)
+                : SetGame.Failure("Failed to fetch game"));
         })
     }
 
-    public unsubscribFromGame(gameId: string) {
-        this.gameService.unsubscribFromGameChanges(gameId);
+    public unsubscribFromGame(gameId: string, playerId: string) {
+        this.gameService.unsubscribFromGameChanges(gameId, playerId);
     }
 
     public proposeQuest(

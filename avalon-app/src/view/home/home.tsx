@@ -312,7 +312,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
         const { gameId, playerName, history } = this.props;
         if (AsyncLoadedValue.isNotStartedLoading(gameId) && AsyncLoadedValue.isReady(playerName)) {
             this.services.gameService.createGame(playerName.value).then(maybeCreateGame => {
-                if (maybeCreateGame != null) {
+                if (maybeCreateGame.success) {
                     const { gameId, playerId } = maybeCreateGame;
                     history.push(new GamePath(gameId, playerId, playerName.value).getLocationDescriptor());
                 }

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "mongodb": "^3.2.7",
+    "socket.io": "^2.2.0"
+  }
+}
