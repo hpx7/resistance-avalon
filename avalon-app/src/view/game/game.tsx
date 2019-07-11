@@ -90,7 +90,8 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         TOO_MANY_QUEST_MEMBERS_TEXT: "Too many quest members",
         NOT_ENOUGH_QUEST_MEMBERS: "Not enough quest members",
         YOU_VOTED: "You voted",
-        NOT_PART_OF_QUEST: "You are not going on this quest"
+        NOT_PART_OF_QUEST: "You are not going on this quest",
+        GOOD_CANNOT_FAIL: "Sorry, good roles cannot fail quests"
     }
     private services = getServices(this.context);
     private interval: number | undefined;
@@ -401,11 +402,15 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                                 <div className={styles.waitingForVotes}>{STRINGS.QUEST_TITLE}</div>
                                 <div className={styles.voteButtons}>
                                     <Button
-                                        onClick={this.onVoteOnQuest(questAttempt, Vote.PASS)}
+                                        onClick={this.onVoteOnQuest(game, questAttempt, Vote.PASS)}
                                         intent={Intent.SUCCESS}
                                         text={STRINGS.PASS}
                                     />
-                                    {this.maybeRenderFailButton(game, questAttempt)}
+                                    <Button
+                                        onClick={this.onVoteOnQuest(game, questAttempt, Vote.FAIL)}
+                                        intent={Intent.DANGER}
+                                        text={STRINGS.FAIL}
+                                    />
                                 </div>
                             </div>
                         )
@@ -521,29 +526,24 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         this.services.gameService.voteOnProposal(questAttempt.id, playerId, playerName, vote);
     }
 
-    private onVoteOnQuest = (questAttempt: IQuestAttempt, vote: Vote) => () => {
+    private onVoteOnQuest = (game: IGame, questAttempt: IQuestAttempt, vote: Vote) => () => {
         const { playerId, playerName } = this.props;
-        this.services.gameService.voteOnQuest(questAttempt.id, playerId, playerName, vote);
+        const { myRole, roles } = game;
+        const { STRINGS } = UnconnectedGame;
+        const { gameService, stateService } = this.services;
+        NullableValue.of(myRole)
+            .map(role => {
+                if (vote === Vote.FAIL && roles[role]) {
+                    stateService.showFailToast(STRINGS.GOOD_CANNOT_FAIL)
+                } else {
+                    gameService.voteOnQuest(questAttempt.id, playerId, playerName, vote);
+                }
+                return undefined;
+            });
     }
 
     private onUpdateSelectedPlayers = (selectedPlayers: string[]) => {
-        this.setState({ questMembers: selectedPlayers })
-    }
-
-    private maybeRenderFailButton(game: IGame, questAttempt: IQuestAttempt) {
-        const { STRINGS } = UnconnectedGame;
-        const { myRole, roles } = game;
-        return NullableValue.of(myRole)
-            .map(role => TernaryValue.of(!roles[role])
-                .ifTrue(
-                    <Button
-                        onClick={this.onVoteOnQuest(questAttempt, Vote.FAIL)}
-                        intent={Intent.DANGER}
-                        text={STRINGS.FAIL}
-                    />
-                ).get())
-            .getOrUndefined();
-
+        this.setState({ questMembers: selectedPlayers });
     }
 
     /**
