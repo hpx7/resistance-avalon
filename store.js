@@ -105,9 +105,9 @@ const GameModel = (games) => ({
       (err, result) => {
         if (err) {
           console.error(err)
-          fn(false)
+          fn({success: false})
         } else if (result === null || result.value === null) {
-          fn(false)
+          fn({success: false})
         } else {
           // move to next leader if proposal was rejected
           const game = result.value
@@ -123,24 +123,34 @@ const GameModel = (games) => ({
               )}},
             )
           }
-          fn(true)
+          fn({success: true})
         }
       }
     )
   },
   voteInQuest: (questId, playerId, playerName, vote, fn) => {
-    fn(false)
+    fn({success: false})
   },
+  fetchState: (gameId, playerId, fn) => {
+    games.findOne({id: gameId, 'players.id': playerId}, (err, result) => {
+      if (err) {
+        console.error(err)
+        fn(null)
+      } else {
+        fn(result)
+      }
+    })
+  }
 })
 
 const callback = (fn) => (err, result) => {
   if (err) {
     consle.error(err)
-    fn(false)
+    fn({success: false})
   } else if (result.modifiedCount === 0) {
-    fn(false)
+    fn({success: false})
   } else {
-    fn(true)
+    fn({success: true})
   }
 }
 

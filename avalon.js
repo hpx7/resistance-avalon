@@ -13,9 +13,6 @@ store.init(
         const gameId = randomId()
         const playerId = randomId()
         model.createGame(gameId, playerId, playerName, (success) => {
-          if (success) {
-            socket.join(gameId + playerId)
-          }
           fn({gameId, playerId, success})
         })
       })
@@ -24,9 +21,6 @@ store.init(
         console.log(socket.id + ' joinGame ' + gameId + ' ' + playerName)
         const playerId = randomId()
         model.joinGame(gameId, playerId, playerName, (success) => {
-          if (success) {
-            socket.join(gameId + playerId)
-          }
           fn({playerId, success})
         })
       })
@@ -53,7 +47,14 @@ store.init(
 
       socket.on('subscribe', (gameId, playerId, fn) => {
         console.log(socket.id + ' subscribe ' + gameId + ' ' + playerId)
-        socket.join(gameId + playerId)
+        model.fetchState(gameId, playerId, (state) => {
+          if (!state) {
+            fn({success: false})
+          } else {
+            socket.join(gameId + playerId)
+            fn({'game': state, success: true})
+          }
+        })
       })
 
       socket.on('unsubscribe', (gameId, playerId, fn) => {
