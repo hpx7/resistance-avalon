@@ -12,7 +12,7 @@ store.init(
         console.log(socket.id + ' createGame ' + playerName)
         const gameId = randomId()
         const playerId = randomId()
-        model.createGame(gameId, playerId, playerName, (success) => {
+        model.createGame(gameId, playerId, playerName, ({success}) => {
           fn({gameId, playerId, success})
         })
       })
@@ -20,7 +20,7 @@ store.init(
       socket.on('joinGame', (gameId, playerName, fn) => {
         console.log(socket.id + ' joinGame ' + gameId + ' ' + playerName)
         const playerId = randomId()
-        model.joinGame(gameId, playerId, playerName, (success) => {
+        model.joinGame(gameId, playerId, playerName, ({success}) => {
           fn({playerId, success})
         })
       })
