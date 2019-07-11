@@ -213,8 +213,8 @@ const getState = (game, player) => {
   return {
     'id': game.id,
     'creator': game.creator,
-    'players': players.map(player => player.name),
-    'roles': game.quests.length ? flatMap(players, player => ({[player.role]: !evilRoles.includes(role)})) : {},
+    'players': players.map(p => player.name),
+    'roles': game.quests.length ? flatMap(players, p => ({[p.role]: !evilRoles.includes(p.role)})) : {},
     'questConfigurations': questConfigurations[players.length],
     'myName': player.name,
     'myRole': player.role,
