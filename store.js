@@ -4,7 +4,7 @@ const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 
 // which roles have knowledge of which other roles
 const roleKnowledge = {
-  'merlin': ['morgana', 'assassin', 'minion'],
+  'merlin': ['morgana', 'assassin', 'minion', 'oberon'],
   'percival': ['merlin', 'morgana'],
   'loyal servant': [],
   'morgana': ['mordred', 'assassin', 'minion'],
@@ -226,10 +226,10 @@ const getState = (game, player) => {
 
 const getPlayerKnowledge = (game, player) => {
   const knowledge = roleKnowledge[player.role] || []
-  const knownPlayers = game.players.filter(p => p.id === player.id && knowledge.includes(p.role))
+  const knownPlayers = game.players.filter(p => p.id !== player.id && knowledge.includes(p.role))
   return {
     players: knownPlayers.map(p => p.name),
-    roles: flatMap(knownPlayers, player => ({[player.role]: !evilRoles.includes(role)}))
+    roles: flatMap(knownPlayers, player => ({[player.role]: !evilRoles.includes(player.role)}))
   }
 }
 
