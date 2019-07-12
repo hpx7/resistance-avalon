@@ -95,7 +95,7 @@ const GameModel = (games) => ({
           // move to next leader if proposal was rejected
           const game = result.value
           const quest = game.quests.find(({id}) => id === questId)
-          if (quest.remainingVotes === 0 && quest.voteStatus < 0 && quest.attemptNumber < 5) {
+          if (quest.remainingVotes === 0 && quest.voteStatus < 0 && quest.attemptNumber <= 5) {
             games.updateOne(
               {'quests.id': questId},
               {$push: {quests: createQuest(
@@ -277,6 +277,8 @@ const getGameStatus = (game) => {
   if (game.quests.filter(quest => getQuestStatus(game, quest) === 'passed').length > 2)
     return 'good_won'
   if (game.quests.filter(quest => getQuestStatus(game, quest) === 'failed').length > 2)
+    return 'evil_won'
+  if (game.quests.filter(quest => quest.attemptNumber > 5))
     return 'evil_won'
   return 'in_progress'
 }
