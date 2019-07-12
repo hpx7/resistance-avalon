@@ -223,16 +223,12 @@ const getPlayerKnowledge = (game, player) => {
   }
 }
 
-const conditionalMap = (value, mapper) => {
-  return value == null ? value : mapper(value);
-}
-
 const sanitizeQuest = (game, quest, player) => {
   const q = Object.assign({}, quest)
   q.votes = quest.remainingVotes === 0 ? quest.votes.sort(cmp('player')) : []
   q.results = quest.remainingResults === 0 ? quest.results.map(result => result.vote).sort() : []
-  q.myVote = conditionalMap(quest.votes.find(vote => vote.player === player.name), player => player.vote)
-  q.myResult = conditionalMap(quest.results.find(result => result.player === player.name), player => player.vote)
+  q.myVote = (quest.votes.find(vote => vote.player === player.name) || {}).vote
+  q.myResult = (quest.results.find(result => result.player === player.name) || {}).vote
   q.status = getQuestStatus(game, quest)
   delete q.voteStatus
   delete q.failures
