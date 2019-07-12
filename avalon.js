@@ -49,15 +49,16 @@ const randomId = () => {
 
 store.init((model) => {
   const io = server(3000)
+
+  model.onUpdate((states) => {
+    Object.entries(states).forEach(([playerId, state]) => io.to(playerId).emit('game', state))
+  })
+
   io.on('connection', (socket) => {
     console.log(socket.id + ' connection')
 
     Object.entries(api(model, socket)).forEach(([name, method]) => {
       socket.on(name, method)
-    })
-
-    model.onUpdate((states) => {
-      Object.entries(states).forEach(([playerId, state]) => io.to(playerId).emit('game', state))
     })
 
     socket.on('disconnect', () => {
