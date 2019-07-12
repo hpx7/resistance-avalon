@@ -294,7 +294,7 @@ const getQuestStatus = (game, quest) => {
 }
 
 const didQuestPass = (game, quest) => {
-  return questfailures === 0 || (questroundNumber === 4 && game.players.length > 6 && quest.failures === 1)
+  return quest.failures === 0 || (quest.roundNumber === 4 && game.players.length > 6 && quest.failures === 1)
 }
 
 exports.init = (onReady) => {
