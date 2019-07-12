@@ -112,7 +112,41 @@ const GameModel = (games) => ({
     )
   },
   voteInQuest: (questId, playerId, playerName, vote, fn) => {
-    fn({success: false})
+    games.findOneAndUpdate(
+      {
+        players: {$elemMatch: {id: playerId, name: playerName, role: {$in: rolesForVote(vote)}}},
+        quests: {$elemMatch: {id: questId, members: playerName, 'results.player': {$ne: playerName}, remainingVotes: 0, voteStatus: {$gt: 0}}}
+      },
+      {
+        $push: {'quests.$[quest].results': {player: playerName, vote: vote}},
+        $inc: {'quests.$[quest].remainingResults': -1, 'quests.$[quest].failures': vote < 0 ? 1 : 0}
+      },
+      {arrayFilters: [{'quest.id': questId}], returnOriginal: false},
+      (err, result) => {
+        if (err) {
+          console.error(err)
+          fn({success: false})
+        } else if (result === null || result.value === null) {
+          fn({success: false})
+        } else {
+          // move on to next round if all results have been collected (or do nothing if game is over)
+          const game = result.value
+          const quest = game.quests.find(({id}) => id === questId)
+          if (quest.remainingResults === 0 && quest.roundNumber < 5) {
+            games.updateOne(
+              {'quests.id': questId},
+              {$push: {quests: createQuest(
+                quest.roundNumber + 1,
+                1,
+                getNextLeader(game, quest),
+                game.players.length
+              )}},
+            )
+          }
+          fn({success: true})
+        }
+      }
+    )
   },
   fetchState: (playerId, fn) => {
     games.findOne({'players.id': playerId}, (err, game) => {
@@ -197,6 +231,8 @@ const getNextLeader = (game, quest) => {
   const idx = players.findIndex(player => player.name === quest.leader)
   return players[(idx + 1) % players.length].name
 }
+
+const rolesForVote = (vote) => vote < 0 ? evilRoles : Object.keys(roleKnowledge)
 
 const getState = (game, player) => {
   const players = game.players.sort(cmp('order'))
