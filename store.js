@@ -131,8 +131,8 @@ const GameModel = (games) => ({
   voteInQuest: (questId, playerId, playerName, vote, fn) => {
     fn({success: false})
   },
-  fetchState: (gameId, playerId, fn) => {
-    games.findOne({id: gameId, 'players.id': playerId}, (err, game) => {
+  fetchState: (playerId, fn) => {
+    games.findOne({'players.id': playerId}, (err, game) => {
       if (err) {
         console.error(err)
         fn(null)
@@ -181,7 +181,7 @@ const cmp = (key) => (a, b) => {
   return 0
 }
 
-const randomId = () => Math.random().toString(36).substring(2, 12)
+const randomId = () => Math.random().toString(36).substring(2)
 
 const createPlayer = (playerId, playerName) => ({
   id: playerId, name: playerName, role: null, order: 0
