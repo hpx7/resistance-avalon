@@ -29,11 +29,9 @@ const questConfigurations = {
 
 const GameModel = (games) => ({
   createGame: (gameId, playerId, playerName, fn) => {
-    games.insertOne({id: gameId,
-      creator: playerName,
-      players: [createPlayer(playerId, playerName)],
-      quests: []
-    }, callback(fn))
+    games.insertOne(
+      {id: gameId, creator: playerName, players: [createPlayer(playerId, playerName)], quests: []},
+      callback(fn))
   },
   joinGame: (gameId, playerId, playerName, fn) => {
     games.updateOne(
@@ -138,7 +136,7 @@ const GameModel = (games) => ({
 
 const callback = (fn) => (err, result) => {
   if (err) {
-    consle.error(err)
+    console.error(err)
     fn({success: false})
   } else if (result.modifiedCount === 0) {
     fn({success: false})
