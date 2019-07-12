@@ -146,7 +146,7 @@ export class GameService implements IGameService {
         vote: Vote): Promise<IVoteOnQuestProposalResponse> {
         return new Promise<IVoteOnQuestProposalResponse>((resolve, reject) => {
             this.socket.emit(
-                "proposeQuest",
+                "voteForProposal",
                 questId,
                 playerId,
                 playerName,
@@ -162,7 +162,7 @@ export class GameService implements IGameService {
         vote: Vote): Promise<IVoteOnQuestResponse> {
         return new Promise<IVoteOnQuestProposalResponse>((resolve, reject) => {
             this.socket.emit(
-                "voteOnQuest",
+                "voteInQuest",
                 questId,
                 playerId,
                 playerName,

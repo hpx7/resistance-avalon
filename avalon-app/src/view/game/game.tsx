@@ -351,21 +351,10 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                     .get();
             case QuestAttemptStatus.PENDING_PROPOSAL_VOTES:
                 return NullableValue.of(questAttempt.myVote)
-                    .map(myVote => (
-                        <>
-                            <div className={styles.alert}>
-                                <Icon iconSize={12} intent={Intent.PRIMARY} icon={IconNames.CONFIRM} />
-                                <div className={styles.primary}>
-                                    {STRINGS.YOU_VOTED}: <code>{voteToString(myVote)}</code>
-                                </div>
-                            </div>
-                            <div className={styles.waitingForVotes}>{STRINGS.WAITING_FOR_OTHER_VOTES}</div>
-                        </>
-                    ))
+                    .map(this.renderMyVote)
                     .getOrDefault(
                         <div>
                             <div className={styles.waitingForVotes}>{STRINGS.PROPOSAL_TITLE}</div>
-                            {this.maybeRenderMyVote(questAttempt)}
                             <div className={styles.voteButtons}>
                                 <Button
                                     onClick={this.onVoteOnQuestProposal(questAttempt, Vote.PASS)}
@@ -467,16 +456,19 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
             .getOrUndefined();
     }
 
-    private maybeRenderMyVote(questAttempt: IQuestAttempt) {
+    private renderMyVote = (myVote: Vote) => {
         const { STRINGS } = UnconnectedGame;
-        return NullableValue.of(questAttempt.myVote)
-            .map(myVote => (
+        return (
+            <>
                 <div className={styles.alert}>
                     <Icon iconSize={12} intent={Intent.PRIMARY} icon={IconNames.CONFIRM} />
-                    <div className={styles.primary}>{STRINGS.YOU_VOTED}: <code>{myVote}</code></div>
+                    <div className={styles.primary}>
+                        {STRINGS.YOU_VOTED}: <code>{voteToString(myVote)}</code>
+                    </div>
                 </div>
-            ))
-            .getOrUndefined();
+                <div className={styles.waitingForVotes}>{STRINGS.WAITING_FOR_OTHER_VOTES}</div>
+            </>
+        );
     }
 
     private maybeGetProposeQuestErrorMessage(game: IGame) {
