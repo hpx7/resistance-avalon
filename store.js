@@ -256,7 +256,7 @@ const getGameStatus = (game) => {
 }
 
 const getQuestStatus = (game, quest) => {
-  if (!quest.members)
+  if (quest.members.length === 0)
     return 'proposing_quest'
   if (quest.remainingVotes > 0)
     return 'voting_for_proposal'
