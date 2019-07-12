@@ -3,23 +3,26 @@ import ReactDOM from "react-dom";
 import "./index.scss";
 import { App } from "./view/app/app";
 import * as serviceWorker from "./serviceWorker";
-import { BrowserRouter } from "react-router-dom";
+import { Router } from "react-router-dom";
 import { Provider } from "react-redux";
 import { loggingMiddleware } from "redoodle";
-import { applyMiddleware, createStore } from "redux";
+import { applyMiddleware, createStore, Reducer } from "redux";
 import { composeWithDevTools } from "redux-devtools-extension";
-import { INITIAL_APPLICATION_STATE, appReducer, IApplicationState } from "./state";
+import { createInitialState, appReducer } from "./state";
 import { ContextProvider } from "./common/contextProvider";
 import { GameService, StateService } from "./service";
 import { createApi } from "./common/createApi";
 import { toasterMiddleware, titleMiddleware } from "./middleware";
+import { IApplicationState } from "./state/types";
+import { createBrowserHistory } from "history";
 
+const history = createBrowserHistory();
 const middlewareEnhancer = composeWithDevTools(applyMiddleware(
     titleMiddleware(),
     loggingMiddleware(),
     toasterMiddleware()));
-const createStoreWithMiddleware = middlewareEnhancer<IApplicationState>(createStore);
-const store = createStoreWithMiddleware(appReducer, INITIAL_APPLICATION_STATE);
+const createStoreWithMiddleware = middlewareEnhancer(createStore);
+const store = createStoreWithMiddleware(appReducer as Reducer<IApplicationState>, createInitialState(history));
 
 const api = createApi({ gameServiceApi: "localhost:3000" });
 
@@ -32,9 +35,9 @@ ReactDOM.render(
             stateService={stateService}
             gameService={gameService}
         >
-            <BrowserRouter basename="/">
+            <Router history={history}>
                 <App />
-            </BrowserRouter>
+            </Router>
         </ContextProvider>
     </Provider>,
     document.getElementById("root")

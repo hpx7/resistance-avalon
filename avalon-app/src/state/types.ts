@@ -1,9 +1,11 @@
 import { IAsyncLoaded } from "../common/redoodle";
 import { IGameService } from "../api";
+import { Location } from "history";
 
 export interface IApplicationState {
     gameState: IGameState;
     homeState: IHomeState;
+    routeState: IRouterState;
 }
 
 export enum Role {
@@ -36,6 +38,10 @@ export enum HomeAction {
 export interface IHomeState {
     playerName: IAsyncLoaded<string, string>;
     gameId: IAsyncLoaded<string, string>;
+}
+
+export interface IRouterState {
+    location: Location;
 }
 
 export enum QuestAttemptStatus {
@@ -104,9 +110,4 @@ export interface IEndpoints {
 
 export interface IApplicationApi {
     gameService: IGameService;
-}
-
-export interface IGameMetadata {
-    gameId: string;
-    playerId: string;
 }

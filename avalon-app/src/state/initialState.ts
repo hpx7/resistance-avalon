@@ -1,7 +1,8 @@
 import { IApplicationState, GameAction } from "./types";
 import { AsyncLoadedValue } from "../common/redoodle";
+import { History } from "history";
 
-export const INITIAL_APPLICATION_STATE: IApplicationState = {
+export const createInitialState = (history: History): IApplicationState => ({
     gameState: {
         gameAction: GameAction.VIEW_PLAYERS,
         game: AsyncLoadedValue.asyncNotStartedLoading(),
@@ -9,5 +10,8 @@ export const INITIAL_APPLICATION_STATE: IApplicationState = {
     homeState: {
         playerName: AsyncLoadedValue.asyncNotStartedLoading(),
         gameId: AsyncLoadedValue.asyncNotStartedLoading(),
-    }
-}
+    },
+    routeState: {
+        location: history.location,
+    },
+})

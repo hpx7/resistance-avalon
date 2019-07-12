@@ -22,7 +22,7 @@ import { IconNames, IconName } from "@blueprintjs/icons";
 import { IApplicationState, IGameState } from "../../state";
 import { connect } from "react-redux";
 import { History } from "history";
-import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, GameStatus, Vote, IGameMetadata } from "../../state/types";
+import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, GameStatus, Vote } from "../../state/types";
 import { times, constant, random, maxBy } from "lodash-es";
 import { PlayerList } from "./playerList";
 import { assertNever } from "../../common/assertNever";
@@ -95,7 +95,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     private services = getServices(this.context);
 
     public componentDidMount() {
-        this.services.gameService.subscribeToGame(this.getGameMetadataSupplier());
+        this.services.gameService.register(this.getPlayerIdSupplier());
     }
 
     public componentDidUpdate() {
@@ -123,8 +123,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     public componentWillUnmount() {
-        const { gameId, playerId } = this.props;
-        this.services.gameService.unsubscribFromGame(gameId, playerId);
+        this.services.gameService.unregister(this.getPlayerIdSupplier());
         this.services.stateService.clearGame();
     }
 
@@ -604,12 +603,9 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         }
     }
 
-    private getGameMetadataSupplier = (): Supplier<IGameMetadata> => {
+    private getPlayerIdSupplier = (): Supplier<string | undefined> => {
         return {
-            get: () => {
-                const { gameId, playerId } = this.props;
-                return { gameId, playerId };
-            }
+            get: () => this.props.playerId,
         }
     }
 }

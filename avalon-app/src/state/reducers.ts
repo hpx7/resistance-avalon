@@ -1,8 +1,8 @@
-import { combineReducers, reduceCompoundActions, TypedReducer, Reducer, composeReducers } from "redoodle";
-import { IApplicationState } from "../state/index";
+import { combineReducers, reduceCompoundActions, TypedReducer, composeReducers } from "redoodle";
 import { SetGameId, ClearHomeState, SetPlayerName, SetGame, SetGameAction } from "./actions";
-import { IGameState, IHomeState, IGame, GameAction } from "./types";
+import { IGameState, IHomeState, IGame, GameAction, IRouterState, IApplicationState } from "./types";
 import { TypedAsyncLoadedReducer, AsyncLoadedValue } from "../common/redoodle";
+import { Reducer } from "redux";
 
 const gameReducer = TypedAsyncLoadedReducer.builder<IGame, string>()
     .withAsyncLoadHandler(SetGame, game => game, error => error)
@@ -41,7 +41,14 @@ const combinedHomeStateReducer = TypedReducer.builder<IHomeState>()
 
 const homeStateReducer = composeReducers<IHomeState>(individualHomeStateReducer, combinedHomeStateReducer)
 
-export const appReducer: Reducer<IApplicationState> = reduceCompoundActions(combineReducers<IApplicationState>({
-    gameState: gameStateReducer,
-    homeState: homeStateReducer,
-}));
+const routeStateReducer = TypedReducer.builder<IRouterState>()
+    .withHandler(ClearHomeState.TYPE, (state) => state)
+    .build();
+
+export const appReducer: Reducer<IApplicationState | undefined> = reduceCompoundActions(
+    combineReducers<IApplicationState | undefined>({
+        gameState: gameStateReducer,
+        homeState: homeStateReducer,
+        routeState: routeStateReducer,
+    })
+);

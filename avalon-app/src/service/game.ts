@@ -2,7 +2,7 @@ import { Store } from "redux";
 import { IGameService } from "../api";
 import { IApplicationState } from "../state";
 import { SetGame, CreateToast } from "../state/actions";
-import { Vote, Role, IGameMetadata } from "../state/types";
+import { Vote, Role } from "../state/types";
 import { Supplier } from "../common/supplier";
 
 export class GameService {
@@ -27,19 +27,19 @@ export class GameService {
             });
     }
 
-    public subscribeToGame(supplier: Supplier<IGameMetadata>) {
+    public register(supplier: Supplier<string | undefined>) {
         this.gameService.registerListener(game => {
             this.store.dispatch(SetGame.Success(game));
         });
-        this.gameService.subscribeToGameChanges(supplier, gameStateResponse => {
-            this.store.dispatch(gameStateResponse.success
-                ? SetGame.Success(gameStateResponse.game)
-                : SetGame.Failure("Failed to fetch game"));
+        this.gameService.reJoinGame(supplier, gameStateResponse => {
+            if (!gameStateResponse.success) {
+                return SetGame.Failure("Could not rejoin game");
+            }
         })
     }
 
-    public unsubscribFromGame(gameId: string, playerId: string) {
-        this.gameService.unsubscribFromGameChanges(gameId, playerId);
+    public unregister(supplier: Supplier<string | undefined>) {
+        this.gameService.leaveGame(supplier);
     }
 
     public proposeQuest(

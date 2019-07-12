@@ -1,9 +1,9 @@
 import { Dispatch } from "redux";
+import { Action } from "redoodle";
 import {
     SetTitle,
     SetGameAction,
     GameAction,
-    IApplicationState,
     SetPlayerName,
     SetGameId,
     SetGame,
@@ -12,7 +12,7 @@ import {
 } from "../state";
 
 export class StateService {
-    constructor(private dispatch: Dispatch<IApplicationState>) {}
+    constructor(private dispatch: Dispatch<Action>) {}
 
     public clearGame() {
         this.dispatch(SetGame.Clear.create(undefined));
