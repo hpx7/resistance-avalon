@@ -12,6 +12,7 @@ store.init(
         console.log(socket.id + ' createGame ' + playerName)
         const gameId = randomId()
         const playerId = randomId()
+        socket.join(playerId)
         model.createGame(gameId, playerId, playerName, ({success}) => {
           fn({gameId, playerId, success})
         })
@@ -20,9 +21,27 @@ store.init(
       socket.on('joinGame', (gameId, playerName, fn) => {
         console.log(socket.id + ' joinGame ' + gameId + ' ' + playerName)
         const playerId = randomId()
+        socket.join(playerId)
         model.joinGame(gameId, playerId, playerName, ({success}) => {
           fn({playerId, success})
         })
+      })
+
+      socket.on('rejoinGame', (playerId, fn) => {
+        console.log(socket.id + ' rejoinGame '  + playerId)
+        socket.join(playerId)
+        model.fetchState(playerId, (state) => {
+          if (state) {
+            socket.emit('game', state)
+          }
+          fn({success: state ? true : false})
+        })
+      })
+
+      socket.on('leaveGame', (playerId, fn) => {
+        console.log(socket.id + ' leaveGame ' + playerId)
+        socket.leave(playerId)
+        fn({})
       })
 
       socket.on('startGame', (gameId, playerId, playerName, roleList, playerOrder, fn) => {
@@ -45,24 +64,6 @@ store.init(
         model.voteInQuest(questId, playerId, playerName, vote, fn)
       })
 
-      socket.on('subscribe', (gameId, playerId, fn) => {
-        console.log(socket.id + ' subscribe ' + gameId + ' ' + playerId)
-        model.fetchState(gameId, playerId, (state) => {
-          if (!state) {
-            fn({success: false})
-          } else {
-            socket.join(gameId + playerId)
-            fn({'game': state, success: true})
-          }
-        })
-      })
-
-      socket.on('unsubscribe', (gameId, playerId, fn) => {
-        console.log(socket.id + ' unsubscribe ' + gameId + ' ' + playerId)
-        socket.leave(gameId + playerId)
-        fn({})
-      })
-
       socket.on('disconnect', () => {
         console.log(socket.id + ' disconnect')
       })
@@ -70,7 +71,7 @@ store.init(
   },
   (states) => {
     console.log('received update')
-    Object.entries(states).forEach(([playerId, state]) => io.to(state.id + playerId).emit('game', state))
+    Object.entries(states).forEach(([playerId, state]) => io.to(playerId).emit('game', state))
   }
 )
 
