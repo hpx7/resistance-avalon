@@ -27,21 +27,6 @@ const questConfigurations = {
   10: [3, 4, 4, 5, 5]
 }
 
-exports.init = (onReady, onUpdate) => {
-  mongodb.MongoClient.connect(process.env.MONGODB_URI).then(client => {
-    const games = client.db().collection('games')
-    onReady(GameModel(games))
-    games.watch({fullDocument: 'updateLookup'}).on('change', data => {
-      const game = data.fullDocument
-      const states = flatMap(game.players, player => ({[player.id]: getState(game, player)}))
-      onUpdate(states)
-    })
-  })
-  .catch(err => {
-    console.error(err)
-  })
-}
-
 const GameModel = (games) => ({
   createGame: (gameId, playerId, playerName, fn) => {
     games.insertOne({id: gameId,
@@ -229,7 +214,7 @@ const getPlayerKnowledge = (game, player) => {
   const knownPlayers = game.players.filter(p => p.id !== player.id && knowledge.includes(p.role))
   return {
     players: knownPlayers.map(p => p.name),
-    roles: flatMap(knownPlayers, player => ({[player.role]: !evilRoles.includes(player.role)}))
+    roles: flatMap(knownPlayers, p => ({[p.role]: !evilRoles.includes(p.role)}))
   }
 }
 
@@ -269,4 +254,19 @@ const getQuestStatus = (game, quest) => {
 
 const didQuestPass = (game, quest) => {
   return questfailures === 0 || (questroundNumber === 4 && game.players.length > 6 && quest.failures === 1)
+}
+
+exports.init = (onReady, onUpdate) => {
+  mongodb.MongoClient.connect(process.env.MONGODB_URI).then(client => {
+    const games = client.db().collection('games')
+    onReady(GameModel(games))
+    games.watch({fullDocument: 'updateLookup'}).on('change', data => {
+      const game = data.fullDocument
+      const states = flatMap(game.players, player => ({[player.id]: getState(game, player)}))
+      onUpdate(states)
+    })
+  })
+  .catch(err => {
+    console.error(err)
+  })
 }
