@@ -38,10 +38,9 @@ store.init(
         })
       })
 
-      socket.on('leaveGame', (playerId, fn) => {
+      socket.on('leaveGame', (playerId) => {
         console.log(socket.id + ' leaveGame ' + playerId)
         socket.leave(playerId)
-        fn({})
       })
 
       socket.on('startGame', (gameId, playerId, playerName, roleList, playerOrder, fn) => {
