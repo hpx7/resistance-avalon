@@ -27,13 +27,14 @@ store.init(
         })
       })
 
-      socket.on('rejoinGame', (playerId) => {
+      socket.on('rejoinGame', (playerId, fn) => {
         console.log(socket.id + ' rejoinGame '  + playerId)
         socket.join(playerId)
         model.fetchState(playerId, (state) => {
           if (state) {
             socket.emit('game', state)
           }
+          fn({success: state ? true : false})
         })
       })
 
