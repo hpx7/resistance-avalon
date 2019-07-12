@@ -126,6 +126,13 @@ const GameModel = (games) => ({
         fn(getState(game, player))
       }
     })
+  },
+  onUpdate: (fn) => {
+    games.watch({fullDocument: 'updateLookup'}).on('change', data => {
+      const game = data.fullDocument
+      const states = flatMap(game.players, player => ({[player.id]: getState(game, player)}))
+      fn(states)
+    })
   }
 })
 
@@ -256,15 +263,10 @@ const didQuestPass = (game, quest) => {
   return questfailures === 0 || (questroundNumber === 4 && game.players.length > 6 && quest.failures === 1)
 }
 
-exports.init = (onReady, onUpdate) => {
+exports.init = (onReady) => {
   mongodb.MongoClient.connect(process.env.MONGODB_URI).then(client => {
     const games = client.db().collection('games')
     onReady(GameModel(games))
-    games.watch({fullDocument: 'updateLookup'}).on('change', data => {
-      const game = data.fullDocument
-      const states = flatMap(game.players, player => ({[player.id]: getState(game, player)}))
-      onUpdate(states)
-    })
   })
   .catch(err => {
     console.error(err)

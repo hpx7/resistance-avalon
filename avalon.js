@@ -47,22 +47,21 @@ const randomId = () => {
   return Math.random().toString(36).substring(2)
 }
 
-const io = server(3000)
-store.init(
-  (model) => {
-    io.on('connection', (socket) => {
-      console.log(socket.id + ' connection')
+store.init((model) => {
+  const io = server(3000)
+  io.on('connection', (socket) => {
+    console.log(socket.id + ' connection')
 
-      Object.entries(api(model, socket)).forEach(([name, method]) => {
-        socket.on(name, method)
-      })
-
-      socket.on('disconnect', () => {
-        console.log(socket.id + ' disconnect')
-      })
+    Object.entries(api(model, socket)).forEach(([name, method]) => {
+      socket.on(name, method)
     })
-  },
-  (states) => {
-    Object.entries(states).forEach(([playerId, state]) => io.to(playerId).emit('game', state))
-  }
-)
+
+    model.onUpdate((states) => {
+      Object.entries(states).forEach(([playerId, state]) => io.to(playerId).emit('game', state))
+    })
+
+    socket.on('disconnect', () => {
+      console.log(socket.id + ' disconnect')
+    })
+  })
+})
