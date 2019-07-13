@@ -24,7 +24,7 @@ const middlewareEnhancer = composeWithDevTools(applyMiddleware(
 const createStoreWithMiddleware = middlewareEnhancer(createStore);
 const store = createStoreWithMiddleware(appReducer as Reducer<IApplicationState>, createInitialState(history));
 
-const api = createApi({ gameServiceApi: "localhost:3000" });
+const api = createApi({ gameServiceApi: "" });
 
 const stateService = new StateService(store.dispatch);
 const gameService = new GameService(store, api.gameService);
