@@ -278,7 +278,7 @@ const getGameStatus = (game) => {
     return 'good_won'
   if (game.quests.filter(quest => getQuestStatus(game, quest) === 'failed').length > 2)
     return 'evil_won'
-  if (game.quests.filter(quest => quest.attemptNumber > 5))
+  if (game.quests.some(quest => quest.attemptNumber > 5))
     return 'evil_won'
   return 'in_progress'
 }
