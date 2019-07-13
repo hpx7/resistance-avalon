@@ -48,7 +48,7 @@ const randomId = () => {
 }
 
 store.init((model) => {
-  const io = server(3000)
+  const io = server(process.env.PORT)
 
   model.onUpdate((states) => {
     Object.entries(states).forEach(([playerId, state]) => io.to(playerId).emit('game', state))
