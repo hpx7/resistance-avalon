@@ -523,7 +523,17 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     private renderCurrentQuestActions(game: IGame, questAttempt: IQuestAttempt) {
-        const { status, attemptNumber, roundNumber, leader, members } = questAttempt;
+        const {
+            status,
+            attemptNumber,
+            roundNumber,
+            leader,
+            members,
+            myVote,
+            myResult,
+            remainingVotes,
+            remainingResults
+        } = questAttempt;
         const { myName } = game;
         const { STRINGS } = UnconnectedGame;
         switch (status) {
@@ -533,8 +543,8 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                     .ifFalse(<div>Waiting for {leader} to propose a quest.</div>)
                     .get();
             case QuestAttemptStatus.PENDING_PROPOSAL_VOTES:
-                return NullableValue.of(questAttempt.myVote)
-                    .map(this.renderMyVote(false))
+                return NullableValue.of(myVote)
+                    .map(this.renderMyVote(false, remainingVotes))
                     .getOrDefault(
                         <div>
                             <div className={styles.waitingForVotes}>{STRINGS.PROPOSAL_TITLE}</div>
@@ -556,8 +566,8 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                 return <div>Quest {roundNumber} proposal {attemptNumber} was rejected.</div>;
             case QuestAttemptStatus.PENDING_QUEST_RESULTS:
                 return TernaryValue.of(members.includes(myName))
-                    .ifTrue(NullableValue.of(questAttempt.myResult)
-                        .map(this.renderMyVote(true))
+                    .ifTrue(NullableValue.of(myResult)
+                        .map(this.renderMyVote(true, remainingResults))
                         .getOrDefault(
                             <div>
                                 <div className={styles.waitingForVotes}>{STRINGS.QUEST_TITLE}</div>
@@ -629,7 +639,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
             .getOrUndefined();
     }
 
-    private renderMyVote = (isQuest: boolean) => (myVote: Vote) => {
+    private renderMyVote = (isQuest: boolean, numVotesRemaining: number) => (myVote: Vote) => {
         const { STRINGS } = UnconnectedGame;
         const voteStyles = myVote === Vote.PASS ? styles.good : styles.bad;
         return (
@@ -640,7 +650,9 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                         {STRINGS.YOU_VOTED}: <code className={voteStyles}>{voteToString(myVote, isQuest)}</code>
                     </div>
                 </div>
-                <div className={styles.waitingForVotes}>{STRINGS.WAITING_FOR_OTHER_VOTES}</div>
+                <div className={styles.waitingForVotes}>
+                    {STRINGS.WAITING_FOR_OTHER_VOTES}: {numVotesRemaining} more
+                </div>
             </>
         );
     }
@@ -756,7 +768,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         switch (status) {
             case QuestAttemptStatus.PENDING_PROPOSAL:
                 return STRINGS.WAITING_FOR_GAME_START_TITLE;
-            case QuestAttemptStatus.PENDING_PROPOSAL_VOTES :
+            case QuestAttemptStatus.PENDING_PROPOSAL_VOTES:
                 return STRINGS.WAITING_FOR_PROPOSAL_VOTES_TITLE;
             case QuestAttemptStatus.PROPOSAL_REJECTED:
                 return STRINGS.PROPOSAL_REJECTED_TITLE;
