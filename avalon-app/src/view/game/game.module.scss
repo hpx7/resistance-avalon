@@ -15,6 +15,7 @@ $logo-size: 3 * $pt-grid-size;
         height: $nav-bar-height;
         background-color: transparent;
         box-shadow: none;
+        border-bottom: 1px solid $pt-dark-divider-white;
     }
 }
 
@@ -24,6 +25,8 @@ $logo-size: 3 * $pt-grid-size;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    overflow: scroll;
+    width: 100%;
 }
 
 .skeletonRow:not(:last-child) {
@@ -32,9 +35,19 @@ $logo-size: 3 * $pt-grid-size;
 
 .gameHeader:not(:first-child) {
     margin-top: 2 * $pt-grid-size;
+    display: flex;
+    align-items: center;
+
+    .collapseIcon {
+        margin-left: $pt-grid-size;
+    }
 }
 
-.role {
+.questContent, .questTabs {
+    margin-top: $pt-grid-size;
+}
+
+.role, .playerVote {
     display: flex;
     align-items: center;
     padding: $pt-grid-size;
@@ -52,11 +65,24 @@ $logo-size: 3 * $pt-grid-size;
     }
 }
 
+.playerVote, .myVote {
+    &:global(.#{$ns}-running-text) {
+        .good {
+            color: $green5;
+        }
+
+        .bad {
+            color: $red5;
+        }
+    }
+
+}
+
 .questHistory {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 2 * $pt-grid-size;
+    margin: 2 * $pt-grid-size 0;
 
     .roundNumber {
         padding: $pt-grid-size / 4 $pt-grid-size;
@@ -75,7 +101,7 @@ $logo-size: 3 * $pt-grid-size;
     flex-direction: column;
     align-items: flex-start;
 
-    & > div:not(:first-child):not(:last-child) {
+    & > div:not(:first-child) {
         margin-top: $pt-grid-size;
         width: 100%;
     }
@@ -85,12 +111,21 @@ $logo-size: 3 * $pt-grid-size;
 .proposalPlayerList,
 .alert,
 .waitingForVotes,
-.questParticipants {
+.questParticipants,
+.previousQuestCollapseButton,
+.voteBreakdown {
     margin-top: $pt-grid-size;
 }
 
+.questActions {
+    margin-top: 2 * $pt-grid-size;
+}
+
+.previousQuestTitle {
+    margin-bottom: $pt-grid-size;
+}
+
 .alert {
-    color: $red5;
     display: flex;
     align-items: center;
 
@@ -107,6 +142,23 @@ $logo-size: 3 * $pt-grid-size;
     color: $blue5;
 }
 
+.success {
+    color: $green5;
+}
+
+
 .questParticipants {
     width: 100%;
+}
+
+.previousQuestCollapseButton {
+    padding: 0;
+
+    &:hover {
+        background: transparent !important;
+    }
+}
+
+.proposalVotes {
+    margin: $pt-grid-size 0;
 }

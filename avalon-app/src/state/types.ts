@@ -65,6 +65,11 @@ export enum Vote {
     FAIL = -1,
 }
 
+export interface IPlayerVote {
+    player: string;
+    vote: Vote;
+}
+
 export interface IQuestAttempt {
     id: string;
     roundNumber: number;
@@ -74,9 +79,9 @@ export interface IQuestAttempt {
     members: string[];
     myVote?: Vote;
     myResult?: Vote;
-    votes: { [key: string]: Vote };
+    votes: IPlayerVote[];
     remainingVotes: number;
-    results: number[];
+    results: Vote[];
     remainingResults: number;
     status: QuestAttemptStatus;
 }

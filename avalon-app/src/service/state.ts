@@ -43,4 +43,12 @@ export class StateService {
     public showFailToast(toast: string) {
         this.dispatch(CreateToast.Failure.create(toast));
     }
+
+    public showSuccessToast(toast: string) {
+        this.dispatch(CreateToast.Success.create(toast));
+    }
+
+    public showInProgressToast(toast: string) {
+        this.dispatch(CreateToast.InProgress.create(toast));
+    }
 }

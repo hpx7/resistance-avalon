@@ -14,13 +14,15 @@ export class NotFound extends React.PureComponent {
     public render() {
         const { STRINGS } = NotFound;
         return (
-            <Card elevation={Elevation.THREE} className={sharedStyles.pageContent}>
-                <NonIdealState
-                    title={STRINGS.TITLE}
-                    icon={IconNames.ERROR}
-                    action={this.renderBackToHome()}
-                />
-            </Card>
+            <div className={sharedStyles.pageContentWrapper}>
+                <Card elevation={Elevation.THREE} className={sharedStyles.pageContent}>
+                    <NonIdealState
+                        title={STRINGS.TITLE}
+                        icon={IconNames.ERROR}
+                        action={this.renderBackToHome()}
+                    />
+                </Card>
+            </div>
         );
     }
 

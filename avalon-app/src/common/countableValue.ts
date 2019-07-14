@@ -22,7 +22,9 @@ export class CountableValue<T> {
     }
 
     public maybeGetElementAtIndex(index: number): NullableValue<T> {
-        return this.count() <= index ? NullableValue.of<T>(undefined) : NullableValue.of(this.value[index]);
+        return this.count() <= index || index < 0
+            ? NullableValue.of<T>(undefined)
+            : NullableValue.of(this.value[index]);
     }
 
     public maybeGetLastElement(): NullableValue<T> {

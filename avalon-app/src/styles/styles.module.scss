@@ -1,5 +1,18 @@
 @import "~@blueprintjs/core/lib/scss/variables";
 
-.pageContent {
-    width: 35 * $pt-grid-size;
+.pageContentWrapper {
+    width: 100%;
+    overflow: auto;
+
+    .pageContent {
+        width: 35 * $pt-grid-size;
+        margin: 0 auto;
+    }
+
+    &:before, &:after {
+        height: 2 * $pt-grid-size;
+        display: block;
+        width: 100%;
+        content: "";
+    }
 }

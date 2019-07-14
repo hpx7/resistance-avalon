@@ -87,22 +87,24 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
         const isJoinGameAction = this.shouldShowActionMatch(HomeAction.JOIN_GAME);
         const isCreateGameAction = this.shouldShowActionMatch(HomeAction.CREATE_GAME);
         return (
-            <Card elevation={Elevation.THREE} className={styles.home}>
-                <Collapse
-                    className={classNames({[styles.fadeCollapse]: isJoinGameAction})}
-                    transitionDuration={400}
-                    isOpen={isJoinGameAction}
-                >
-                    {this.renderJoinGame()}
-                </Collapse>
-                <Collapse
-                    className={classNames({[styles.fadeCollapse]: isCreateGameAction})}
-                    transitionDuration={400}
-                    isOpen={isCreateGameAction}
-                >
-                    {this.renderCreateGame()}
-                </Collapse>
-            </Card>
+            <div className={sharedStyles.pageContentWrapper}>
+                <Card elevation={Elevation.THREE} className={classNames(sharedStyles.pageContent, styles.home)}>
+                    <Collapse
+                        className={classNames({[styles.fadeCollapse]: isJoinGameAction})}
+                        transitionDuration={400}
+                        isOpen={isJoinGameAction}
+                    >
+                        {this.renderJoinGame()}
+                    </Collapse>
+                    <Collapse
+                        className={classNames({[styles.fadeCollapse]: isCreateGameAction})}
+                        transitionDuration={400}
+                        isOpen={isCreateGameAction}
+                    >
+                        {this.renderCreateGame()}
+                    </Collapse>
+                </Card>
+            </div>
         );
     }
 
@@ -172,7 +174,6 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
                 label={STRINGS.USER_NAME_LABEL}
                 labelFor="name-input"
                 labelInfo={STRINGS.REQUIRED_TEXT}
-                className={sharedStyles.pageContent}
                 intent={this.getIntentForValue(value)}
             >
                 <InputGroup
