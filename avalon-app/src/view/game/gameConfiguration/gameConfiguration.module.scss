@@ -26,6 +26,15 @@
     margin: $pt-grid-size 0 2 * $pt-grid-size 0;
 }
 
-.addRole, .dndHelper, .configurationError {
+.addRole, .dndHelper, .playerOrderWarning, .configurationError {
     margin: $pt-grid-size 0;
+}
+
+.warning {
+    color: $orange5;
+}
+
+.warningIcon {
+    margin-right: $pt-grid-size / 2;
+    margin-bottom: $pt-grid-size / 5;
 }

@@ -91,6 +91,7 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
         THERE_CAN_BE_AT_MOST: "There can be at most",
         TAB_NAVIGATION: "TabNavigation",
         DND_HELPER_TEXT: "Drag and drop to configure player order",
+        PLAYER_ORDER_WARNING: "Note that the game will pick a random starting point in the provided ordering",
         NO_ROLES_SPECIFIED: "No roles specified",
         GOOD_ROLE: "good role",
         THERE_MUST_BE_EXACTLY: "There must be exactly",
@@ -155,6 +156,15 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
                             onReorderPlayers={this.onReorderPlayers}
                         />
                         <div className={styles.dndHelper}>{STRINGS.DND_HELPER_TEXT}</div>
+                        <div className={styles.playerOrderWarning}>
+                            <Icon
+                                className={styles.warningIcon}
+                                iconSize={12}
+                                icon={IconNames.WARNING_SIGN}
+                                intent={Intent.WARNING}
+                            />
+                            <span className={styles.warning}>{STRINGS.PLAYER_ORDER_WARNING}</span>
+                        </div>
                     </>
                 );
             case ConfigurationTab.ROLES:
