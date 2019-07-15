@@ -162,7 +162,7 @@ const GameModel = (games) => ({
   onUpdate: (fn) => {
     games.watch({fullDocument: 'updateLookup'}).on('change', data => {
       const game = data.fullDocument
-      fn([...game.players].map(player => ({ playerId: player.id, state: getState(game, player) })));
+      game.players.forEach(player => fn(player.id, getState(game, player)))
     })
   }
 })
@@ -196,12 +196,14 @@ const flatMap = (a, mapFn) => {
   return result
 }
 
-const cmp = (key) => (a, b) => {
-  if (a[key] > b[key])
-    return 1
-  if (a[key] < b[key])
-    return -1
-  return 0
+const sortBy = (items, key) => {
+  return [...items].sort((a, b) => {
+    if (a[key] > b[key])
+      return 1
+    if (a[key] < b[key])
+      return -1
+    return 0
+  })
 }
 
 const randomId = () => Math.random().toString(36).substring(2)
@@ -234,7 +236,7 @@ const getNextLeader = (game, quest) => {
 const rolesForVote = (vote) => vote < 0 ? evilRoles : Object.keys(roleKnowledge)
 
 const getState = (game, player) => {
-  const players = game.players.sort(cmp('order'))
+  const players = sortBy(game.players, 'order')
   return {
     'id': game.id,
     'creator': game.creator,
@@ -260,7 +262,7 @@ const getPlayerKnowledge = (game, player) => {
 
 const sanitizeQuest = (game, quest, player) => {
   const q = Object.assign({}, quest)
-  q.votes = quest.remainingVotes === 0 ? quest.votes.sort(cmp('player')) : []
+  q.votes = quest.remainingVotes === 0 ? sortBy(quest.votes, 'player') : []
   q.results = quest.remainingResults === 0 ? quest.results.map(result => result.vote).sort() : []
   q.myVote = (quest.votes.find(vote => vote.player === player.name) || {}).vote
   q.myResult = (quest.results.find(result => result.player === player.name) || {}).vote
