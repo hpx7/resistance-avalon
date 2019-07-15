@@ -162,8 +162,7 @@ const GameModel = (games) => ({
   onUpdate: (fn) => {
     games.watch({fullDocument: 'updateLookup'}).on('change', data => {
       const game = data.fullDocument
-      const states = flatMap(game.players, player => ({[player.id]: getState(game, player)}))
-      fn(states)
+      fn([...game.players].map(player => ({ playerId: player.id, state: getState(game, player) })));
     })
   }
 })

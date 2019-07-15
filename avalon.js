@@ -50,9 +50,7 @@ const randomId = () => {
 store.init((model) => {
   const io = server(process.env.PORT)
 
-  model.onUpdate((states) => {
-    Object.entries(states).forEach(([playerId, state]) => io.to(playerId).emit('game', state))
-  })
+  model.onUpdate((states) => states.map(({ playerId, state }) => io.to(playerId).emit('game', state)));
 
   io.on('connection', (socket) => {
     console.log(socket.id + ' connection')
