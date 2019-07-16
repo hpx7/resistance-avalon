@@ -1,11 +1,12 @@
 const server = require('socket.io')
 const crypto = require('crypto')
 const store = require('./store')
+const utils = require('./utils')
 
 const api = (model, socket) => ({
   createGame: (playerName, fn) => {
-    const gameId = randomId()
-    const playerSecret = randomId()
+    const gameId = utils.randomId()
+    const playerSecret = utils.randomId()
     const playerId = hash(playerSecret)
     socket.join(playerId)
     model.createGame(gameId, playerId, playerName, ({success}) => {
@@ -13,7 +14,7 @@ const api = (model, socket) => ({
     })
   },
   joinGame: (gameId, playerName, fn) => {
-    const playerSecret = randomId()
+    const playerSecret = utils.randomId()
     const playerId = hash(playerSecret)
     socket.join(playerId)
     model.joinGame(gameId, playerId, playerName, ({success}) => {
@@ -51,8 +52,6 @@ const api = (model, socket) => ({
     model.voteInQuest(questId, playerId, playerName, vote, fn)
   }
 })
-
-const randomId = () => Math.random().toString(36).substring(2)
 
 const hash = (str) => crypto.createHash('sha256').update(str).digest('base64')
 

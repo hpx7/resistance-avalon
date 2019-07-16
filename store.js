@@ -1,4 +1,5 @@
 const mongodb = require('mongodb')
+const utils = require('./utils')
 
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 
@@ -31,17 +32,17 @@ const GameModel = (games) => ({
   createGame: (gameId, playerId, playerName, fn) => {
     games.insertOne(
       {id: gameId, creator: playerName, players: [createPlayer(playerId, playerName)], quests: []},
-      callback(fn))
+      utils.callback(fn))
   },
   joinGame: (gameId, playerId, playerName, fn) => {
     games.updateOne(
       {id: gameId, 'players.name': {$ne: playerName}, quests: []},
       {$push: {players: createPlayer(playerId, playerName)}},
-      callback(fn)
+      utils.callback(fn)
     )
   },
   startGame: (gameId, playerId, playerName, roleList, playerOrder, fn) => {
-    const shuffledRoles = shuffle(roleList)
+    const shuffledRoles = utils.shuffle(roleList)
     const players = playerOrder.map((name, i) => ({order: ALPHABET[i], name, role: roleList[i]}))
     const leader = playerOrder[Math.floor(Math.random() * playerOrder.length)]
     games.updateOne(
@@ -53,13 +54,13 @@ const GameModel = (games) => ({
         quests: [],
       },
       {
-        $set: flatMap(players, ({order, role}) => (
+        $set: utils.flatMap(players, ({order, role}) => (
           {[`players.$[${order}].role`]: role, [`players.$[${order}].order`]: order}
         )),
         $push: {quests: createQuest(1, 1, leader, players.length)}
       },
       {arrayFilters: players.map(({order, name}) => ({[`${order}.name`]: name}))},
-      callback(fn)
+      utils.callback(fn)
     )
   },
   proposeQuest: (questId, playerId, playerName, proposedMembers, fn) => {
@@ -71,7 +72,7 @@ const GameModel = (games) => ({
       },
       {$set: {'quests.$[quest].members': proposedMembers}},
       {arrayFilters: [{'quest.id': questId}]},
-      callback(fn)
+      utils.callback(fn)
     )
   },
   voteForProposal: (questId, playerId, playerName, vote, fn) => {
@@ -169,51 +170,12 @@ const GameModel = (games) => ({
   }
 })
 
-const callback = (fn) => (err, result) => {
-  if (err) {
-    console.error(err)
-    fn({success: false})
-  } else if (result.modifiedCount === 0) {
-    fn({success: false})
-  } else {
-    fn({success: true})
-  }
-}
-
-const shuffle = (a) => {
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-const flatMap = (a, mapFn) => {
-  const result = {}
-  a.forEach(x => {
-    Object.entries(mapFn(x)).forEach(([key, val]) => {
-      result[key] = val
-    })
-  })
-  return result
-}
-
-const sortBy = (items, key) => {
-  return [...items].sort((a, b) => {
-    if (a[key] > b[key])
-      return 1
-    if (a[key] < b[key])
-      return -1
-    return 0
-  })
-}
-
 const createPlayer = (playerId, playerName) => ({
   id: playerId, name: playerName, role: null, order: 0
 })
 
 const createQuest = (roundNumber, attemptNumber, leader, numPlayers) => ({
-  id: Math.random().toString(36).substring(2),
+  id: utils.randomId(),
   roundNumber: roundNumber,
   attemptNumber: attemptNumber,
   size: questConfigurations[numPlayers][roundNumber - 1],
@@ -236,12 +198,12 @@ const getNextLeader = (game, quest) => {
 const rolesForVote = (vote) => vote < 0 ? evilRoles : Object.keys(roleKnowledge)
 
 const getState = (game, player) => {
-  const players = sortBy(game.players, 'order')
+  const players = utils.sortBy(game.players, 'order')
   return {
     'id': game.id,
     'creator': game.creator,
     'players': players.map(p => p.name),
-    'roles': game.quests.length ? flatMap(players, p => ({[p.role]: !evilRoles.includes(p.role)})) : {},
+    'roles': game.quests.length ? utils.flatMap(players, p => ({[p.role]: !evilRoles.includes(p.role)})) : {},
     'questConfigurations': questConfigurations[players.length],
     'myName': player.name,
     'myRole': player.role,
@@ -256,13 +218,13 @@ const getPlayerKnowledge = (game, player) => {
   const knownPlayers = game.players.filter(p => p.id !== player.id && knowledge.includes(p.role))
   return {
     players: knownPlayers.map(p => p.name),
-    roles: flatMap(knownPlayers, p => ({[p.role]: !evilRoles.includes(p.role)}))
+    roles: utils.flatMap(knownPlayers, p => ({[p.role]: !evilRoles.includes(p.role)}))
   }
 }
 
 const sanitizeQuest = (game, quest, player) => {
   const q = Object.assign({}, quest)
-  q.votes = quest.remainingVotes === 0 ? sortBy(quest.votes, 'player') : []
+  q.votes = quest.remainingVotes === 0 ? utils.sortBy(quest.votes, 'player') : []
   q.results = quest.remainingResults === 0 ? quest.results.map(result => result.vote).sort() : []
   q.myVote = (quest.votes.find(vote => vote.player === player.name) || {}).vote
   q.myResult = (quest.results.find(result => result.player === player.name) || {}).vote
