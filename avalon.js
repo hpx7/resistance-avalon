@@ -1,17 +1,18 @@
 const server = require('socket.io')
 const store = require('./store')
+const utils = require('./utils')
 
 const api = (model, socket) => ({
   createGame: (playerName, fn) => {
-    const gameId = randomId()
-    const playerId = randomId()
+    const gameId = utils.randomId()
+    const playerId = utils.randomId()
     socket.join(playerId)
     model.createGame(gameId, playerId, playerName, ({success}) => {
       fn({gameId, playerId, success})
     })
   },
   joinGame: (gameId, playerName, fn) => {
-    const playerId = randomId()
+    const playerId = utils.randomId()
     socket.join(playerId)
     model.joinGame(gameId, playerId, playerName, ({success}) => {
       fn({playerId, success})
@@ -42,10 +43,6 @@ const api = (model, socket) => ({
     model.voteInQuest(questId, playerId, playerName, vote, fn)
   }
 })
-
-const randomId = () => {
-  return Math.random().toString(36).substring(2)
-}
 
 store.init((model) => {
   const io = server(process.env.PORT)
