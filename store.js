@@ -153,6 +153,8 @@ const GameModel = (games) => ({
       if (err) {
         console.error(err)
         fn(null)
+      } else if (!game) {
+        fn(null)
       } else {
         const player = game.players.find(player => player.id === playerId)
         fn(getState(game, player))

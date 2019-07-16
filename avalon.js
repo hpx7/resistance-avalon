@@ -2,8 +2,6 @@ const server = require('socket.io')
 const crypto = require('crypto')
 const store = require('./store')
 
-const sha256 = crypto.createHash('sha256')
-
 const api = (model, socket) => ({
   createGame: (playerName, fn) => {
     const gameId = randomId()
@@ -56,7 +54,7 @@ const api = (model, socket) => ({
 
 const randomId = () => Math.random().toString(36).substring(2)
 
-const hash = (str) => sha256.update(str).digest('base64')
+const hash = (str) => crypto.createHash('sha256').update(str).digest('base64')
 
 store.init((model) => {
   const io = server(process.env.PORT)
