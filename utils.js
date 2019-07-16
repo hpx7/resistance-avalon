@@ -1,5 +1,8 @@
+const crypto = require('crypto')
+
 module.exports = {
   randomId: () => Math.random().toString(36).substring(2),
+  hash: (str) => crypto.createHash('sha256').update(str).digest('base64'),
   callback: (fn) => (err, result) => {
     if (err) {
       console.error(err)
