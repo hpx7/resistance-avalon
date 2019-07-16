@@ -1,23 +1,29 @@
 const server = require('socket.io')
+const crypto = require('crypto')
 const store = require('./store')
+
+const sha256 = crypto.createHash('sha256')
 
 const api = (model, socket) => ({
   createGame: (playerName, fn) => {
     const gameId = randomId()
-    const playerId = randomId()
+    const playerSecret = randomId()
+    const playerId = hash(playerSecret)
     socket.join(playerId)
     model.createGame(gameId, playerId, playerName, ({success}) => {
-      fn({gameId, playerId, success})
+      fn({gameId, playerSecret, success})
     })
   },
   joinGame: (gameId, playerName, fn) => {
-    const playerId = randomId()
+    const playerSecret = randomId()
+    const playerId = hash(playerSecret)
     socket.join(playerId)
     model.joinGame(gameId, playerId, playerName, ({success}) => {
-      fn({playerId, success})
+      fn({playerSecret, success})
     })
   },
-  rejoinGame: (playerId, fn) => {
+  rejoinGame: (playerSecret, fn) => {
+    const playerId = hash(playerSecret)
     socket.join(playerId)
     model.fetchState(playerId, (state) => {
       if (state) {
@@ -26,26 +32,31 @@ const api = (model, socket) => ({
       fn({success: state ? true : false})
     })
   },
-  leaveGame: (playerId) => {
+  leaveGame: (playerSecret) => {
+    const playerId = hash(playerSecret)
     socket.leave(playerId)
   },
-  startGame: (gameId, playerId, playerName, roleList, playerOrder, fn) => {
+  startGame: (gameId, playerSecret, playerName, roleList, playerOrder, fn) => {
+    const playerId = hash(playerSecret)
     model.startGame(gameId, playerId, playerName, roleList, playerOrder, fn)
   },
-  proposeQuest: (questId, playerId, playerName, proposedMembers, fn) => {
+  proposeQuest: (questId, playerSecret, playerName, proposedMembers, fn) => {
+    const playerId = hash(playerSecret)
     model.proposeQuest(questId, playerId, playerName, proposedMembers, fn)
   },
-  voteForProposal: (questId, playerId, playerName, vote, fn) => {
+  voteForProposal: (questId, playerSecret, playerName, vote, fn) => {
+    const playerId = hash(playerSecret)
     model.voteForProposal(questId, playerId, playerName, vote, fn)
   },
-  voteInQuest: (questId, playerId, playerName, vote, fn) => {
+  voteInQuest: (questId, playerSecret, playerName, vote, fn) => {
+    const playerId = hash(playerSecret)
     model.voteInQuest(questId, playerId, playerName, vote, fn)
   }
 })
 
-const randomId = () => {
-  return Math.random().toString(36).substring(2)
-}
+const randomId = () => Math.random().toString(36).substring(2)
+
+const hash = (str) => sha256.update(str).digest('base64')
 
 store.init((model) => {
   const io = server(process.env.PORT)

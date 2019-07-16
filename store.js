@@ -206,14 +206,12 @@ const sortBy = (items, key) => {
   })
 }
 
-const randomId = () => Math.random().toString(36).substring(2)
-
 const createPlayer = (playerId, playerName) => ({
   id: playerId, name: playerName, role: null, order: 0
 })
 
 const createQuest = (roundNumber, attemptNumber, leader, numPlayers) => ({
-  id: randomId(),
+  id: Math.random().toString(36).substring(2),
   roundNumber: roundNumber,
   attemptNumber: attemptNumber,
   size: questConfigurations[numPlayers][roundNumber - 1],
