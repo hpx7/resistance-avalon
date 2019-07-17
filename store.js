@@ -31,12 +31,19 @@ const questConfigurations = {
 const GameModel = (games) => ({
   createGame: (gameId, playerId, playerName, fn) => {
     games.insertOne(
-      {id: gameId, creator: playerName, players: [createPlayer(playerId, playerName)], quests: []},
-      utils.callback(fn))
+      {
+        id: gameId,
+        creator: playerName,
+        players: [createPlayer(playerId, playerName)],
+        playerOrder: null,
+        currentQuest: null,
+        questHistory: []
+     },
+     utils.callback(fn))
   },
   joinGame: (gameId, playerId, playerName, fn) => {
     games.updateOne(
-      {id: gameId, 'players.name': {$ne: playerName}, quests: []},
+      {id: gameId, 'players.name': {$ne: playerName}, currentQuest: null},
       {$push: {players: createPlayer(playerId, playerName)}},
       utils.callback(fn)
     )
@@ -45,19 +52,24 @@ const GameModel = (games) => ({
     const shuffledRoles = utils.shuffle(roleList)
     const players = playerOrder.map((name, i) => ({order: ALPHABET[i], name, role: roleList[i]}))
     const leader = playerOrder[Math.floor(Math.random() * playerOrder.length)]
+
     games.updateOne(
       {
         id: gameId,
         creator: playerName,
         players: {$size: players.length, $elemMatch: {id: playerId, name: playerName}},
         'players.name': {$all: playerOrder},
-        quests: [],
+        currentQuest: null,
       },
       {
-        $set: utils.flatMap(players, ({order, role}) => (
-          {[`players.$[${order}].role`]: role, [`players.$[${order}].order`]: order}
-        )),
-        $push: {quests: createQuest(1, 1, leader, players.length)}
+        $set: {
+          currentQuest: createQuest(1, 1, leader, players.length),
+          playerOrder: utils.rotate(playerOrder, playerOrder.indexOf(leader)),
+          questConfiguration: questConfigurations[players.length],
+          ...utils.flatMap(players, ({order, role}) => (
+            {[`players.$[${order}].role`]: role, [`players.$[${order}].order`]: order}
+          ))
+        }
       },
       {arrayFilters: players.map(({order, name}) => ({[`${order}.name`]: name}))},
       utils.callback(fn)
@@ -68,85 +80,108 @@ const GameModel = (games) => ({
       {
         'players.name': {$all: proposedMembers},
         players: {$elemMatch: {id: playerId, name: playerName}},
-        quests: {$elemMatch: {id: questId, members: [], leader: playerName, size: proposedMembers.length}}
+        'currentQuest.id': questId,
+        'currentQuest.members': [],
+        'currentQuest.leader': playerName,
+        'currentQuest.size': proposedMembers.length
       },
-      {$set: {'quests.$[quest].members': proposedMembers}},
-      {arrayFilters: [{'quest.id': questId}]},
+      {$set: {'currentQuest.members': proposedMembers}},
       utils.callback(fn)
     )
   },
   voteForProposal: (questId, playerId, playerName, vote, fn) => {
-    games.findOneAndUpdate(
+    const proposalRejected = {
+      $and: [
+        {$eq: ['$currentQuest.remainingVotes', 0]},
+        {$lt: ['$currentQuest.voteStatus', 0]},
+        {$lte: ['$currentQuest.attemptNumber', 5]}
+      ]
+    }
+    const nextQuestAttempt = {
+      id: utils.randomId(),
+      roundNumber: '$currentQuest.roundNumber',
+      attemptNumber: {$add: ['$currentQuest.attemptNumber', 1]},
+      size: '$currentQuest.size',
+      leader: {$arrayElemAt: ['$playerOrder', '$currentQuest.roundNumber']},
+      members: [],
+      votes: [],
+      results: [],
+      remainingVotes: {$size: '$players'},
+      voteStatus: 0,
+      remainingResults: '$currentQuest.size',
+      failures: 0
+    }
+    games.updateOne(
       {
         players: {$elemMatch: {id: playerId, name: playerName}},
-        quests: {$elemMatch: {id: questId, members: {$ne: []}, 'votes.player': {$ne: playerName}}}
+        'currentQuest.id': questId,
+        'currentQuest.members': {$ne: []},
+        'currentQuest.votes.player': {$ne: playerName}
       },
-      {
-        $push: {'quests.$[quest].votes': {player: playerName, vote: vote}},
-        $inc: {'quests.$[quest].remainingVotes': -1, 'quests.$[quest].voteStatus': vote}
-      },
-      {arrayFilters: [{'quest.id': questId}], returnOriginal: false},
-      (err, result) => {
-        if (err) {
-          console.error(err)
-          fn({success: false})
-        } else if (result === null || result.value === null) {
-          fn({success: false})
-        } else {
-          // move to next leader if proposal was rejected
-          const game = result.value
-          const quest = game.quests.find(({id}) => id === questId)
-          if (quest.remainingVotes === 0 && quest.voteStatus < 0 && quest.attemptNumber <= 5) {
-            games.updateOne(
-              {'quests.id': questId},
-              {$push: {quests: createQuest(
-                quest.roundNumber,
-                quest.attemptNumber + 1,
-                getNextLeader(game, quest),
-                game.players.length
-              )}},
-            )
+      [
+        {
+          $addFields: {
+            'currentQuest.votes': {$concatArrays: ['$currentQuest.votes', [{player: playerName, vote: vote}]]},
+            'currentQuest.remainingVotes': {$add: ['$currentQuest.remainingVotes', -1]},
+            'currentQuest.voteStatus': {$add: ['$currentQuest.voteStatus', vote]}
           }
-          fn({success: true})
+        },
+        {
+          $addFields: {
+            currentQuest: {$cond: [proposalRejected, nextQuestAttempt, '$currentQuest']},
+            questHistory: {$cond: [proposalRejected, {$concatArrays: ['$questHistory', ['$currentQuest']]}, '$questHistory']}
+          }
         }
-      }
+      ],
+      utils.callback(fn)
     )
   },
   voteInQuest: (questId, playerId, playerName, vote, fn) => {
-    games.findOneAndUpdate(
+    const votingComplete = {
+      $and: [
+        {$eq: ['$currentQuest.remainingResults', 0]},
+        {$lt: ['$currentQuest.roundNumber', 5]}
+      ]
+    }
+    const nextQuestRound = {
+      id: utils.randomId(),
+      roundNumber: {$add: ['$currentQuest.roundNumber', 1]},
+      attemptNumber: 1,
+      size: {$arrayElemAt: ['$questConfiguration', '$currentQuest.roundNumber']},
+      leader: {$arrayElemAt: ['$playerOrder', '$currentQuest.roundNumber']},
+      members: [],
+      votes: [],
+      results: [],
+      remainingVotes: {$size: '$players'},
+      voteStatus: 0,
+      remainingResults: {$arrayElemAt: ['$questConfiguration', '$currentQuest.roundNumber']},
+      failures: 0
+    }
+    games.updateOne(
       {
         players: {$elemMatch: {id: playerId, name: playerName, role: {$in: rolesForVote(vote)}}},
-        quests: {$elemMatch: {id: questId, members: playerName, 'results.player': {$ne: playerName}, remainingVotes: 0, voteStatus: {$gt: 0}}}
+        'currentQuest.id': questId,
+        'currentQuest.members': playerName,
+        'currentQuest.results.player': {$ne: playerName},
+        'currentQuest.remainingVotes': 0,
+        'currentQuest.voteStatus': {$gt: 0}
       },
-      {
-        $push: {'quests.$[quest].results': {player: playerName, vote: vote}},
-        $inc: {'quests.$[quest].remainingResults': -1, 'quests.$[quest].failures': vote < 0 ? 1 : 0}
-      },
-      {arrayFilters: [{'quest.id': questId}], returnOriginal: false},
-      (err, result) => {
-        if (err) {
-          console.error(err)
-          fn({success: false})
-        } else if (result === null || result.value === null) {
-          fn({success: false})
-        } else {
-          // move on to next round if all results have been collected (or do nothing if game is over)
-          const game = result.value
-          const quest = game.quests.find(({id}) => id === questId)
-          if (quest.remainingResults === 0 && quest.roundNumber < 5) {
-            games.updateOne(
-              {'quests.id': questId},
-              {$push: {quests: createQuest(
-                quest.roundNumber + 1,
-                1,
-                getNextLeader(game, quest),
-                game.players.length
-              )}},
-            )
+      [
+        {
+          $addFields: {
+            'currentQuest.results': {$concatArrays: ['$currentQuest.results', [{player: playerName, vote: vote}]]},
+            'currentQuest.remainingResults': {$add: ['$currentQuest.remainingResults', -1]},
+            'currentQuest.failures': {$add: ['$currentQuest.failures', vote < 0 ? 1 : 0]}
           }
-          fn({success: true})
+        },
+        {
+          $addFields: {
+            currentQuest: {$cond: [votingComplete, nextQuestRound, '$currentQuest']},
+            questHistory: {$cond: [votingComplete, {$concatArrays: ['$questHistory', ['$currentQuest']]}, '$questHistory']}
+          }
         }
-      }
+      ],
+      utils.callback(fn)
     )
   },
   fetchState: (playerId, fn) => {
@@ -196,6 +231,7 @@ const getNextLeader = (game, quest) => {
 const rolesForVote = (vote) => vote < 0 ? evilRoles : Object.keys(roleKnowledge)
 
 const getState = (game, player) => {
+  return game
   const players = utils.sortBy(game.players, 'order')
   return {
     'id': game.id,
