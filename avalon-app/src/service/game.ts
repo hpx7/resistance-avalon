@@ -9,12 +9,12 @@ export class GameService {
     constructor(private store: Store<IApplicationState>, private gameService: IGameService) {
     }
 
-    public createGame(userName: string) {
-        return this.gameService.createGame(userName);
+    public createGame(playerName: string) {
+        return this.gameService.createGame(playerName);
     }
 
-    public joinGame(gameId: string, userName: string) {
-        return this.gameService.joinGame(gameId, userName)
+    public joinGame(gameId: string, playerName: string) {
+        return this.gameService.joinGame(gameId, playerName)
             .catch(error => {
                 this.store.dispatch(CreateToast.Failure.create(error));
             });

@@ -24,7 +24,11 @@ export class NullableValue<T> {
     }
 
     public map<V>(mapper: (value: T) => V): NullableValue<V> {
-        return NullableValue.of<V>((NullableValue.isNullish(this.value)) ? this.value : mapper(this.value));
+        return NullableValue.of<V>(NullableValue.isNullish(this.value) ? this.value : mapper(this.value));
+    }
+
+    public flatMap<V>(mapper: (value: T) => NullableValue<V>): NullableValue<V> {
+        return NullableValue.isNullish(this.value) ? NullableValue.of<V>(this.value) : mapper(this.value);
     }
 
     public get(): T | null | undefined {

@@ -104,15 +104,15 @@ export interface IGame {
     status: GameStatus;
 }
 
-export interface ICreatedGame {
-    gameId: string;
-    userId: string;
-}
-
 export interface IEndpoints {
     gameServiceApi: string | undefined;
 }
 
 export interface IApplicationApi {
     gameService: IGameService;
+}
+
+export interface IPlayerMetadata {
+    playerId: string;
+    playerName: string;
 }

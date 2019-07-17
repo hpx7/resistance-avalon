@@ -11,7 +11,7 @@ import {
 } from "@blueprintjs/core";
 import styles from "./home.module.scss";
 import { IHomeState } from "../../state";
-import { IApplicationState, HomeAction } from "../../state/types";
+import { IApplicationState, HomeAction, IPlayerMetadata } from "../../state/types";
 import { connect } from "react-redux";
 import { ContextType, getServices } from "../../common/contextProvider";
 import { handleStringChange } from "../../common/handleStringChange";
@@ -24,6 +24,7 @@ import { GamePath, JoinPath, CreatePath } from "../../paths";
 import QrReader from "react-qr-reader";
 import isUrl from "is-url";
 import { IconNames } from "@blueprintjs/icons";
+import { CookieService } from "../../common/cookie";
 
 interface IOwnProps {
     history: History;
@@ -112,7 +113,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
         const { STRINGS } = UnconnectedHome;
         return [
             <H2 key="create-game-title">{STRINGS.JOIN_GAME_TITLE}</H2>,
-            this.renderUserNameInput(),
+            this.renderPlayerNameInput(),
             this.renderGameIdInput(),
             this.maybeRenderQRCodeReader(),
             <Button
@@ -139,7 +140,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
         const { STRINGS } = UnconnectedHome;
         return [
             <H2 key="create-game-title">{STRINGS.CREATE_GAME_TITLE}</H2>,
-            this.renderUserNameInput(),
+            this.renderPlayerNameInput(),
             <Button
                 key="create-game-button"
                 className={styles.actionButton}
@@ -160,7 +161,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
         ]
     }
 
-    private renderUserNameInput() {
+    private renderPlayerNameInput() {
         const { playerName } = this.props;
         const { STRINGS } = UnconnectedHome;
         const value = AsyncLoadedValue.getValueOrDefault(playerName, "");
@@ -178,7 +179,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
             >
                 <InputGroup
                     id="name-input"
-                    onChange={handleStringChange(this.onUserNameChange)}
+                    onChange={handleStringChange(this.onPlayerNameChange)}
                     placeholder={STRINGS.NAME_PLACEHOLDER}
                     value={value}
                 />
@@ -302,7 +303,12 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
         if (AsyncLoadedValue.isReady(gameId) && AsyncLoadedValue.isReady(playerName)) {
             this.services.gameService.joinGame(gameId.value, playerName.value).then(maybePlayerId => {
                 if (maybePlayerId != null && maybePlayerId.success) {
-                    const gamePath = new GamePath(gameId.value, maybePlayerId.playerId, playerName.value);
+                    const plyaerMetadata: IPlayerMetadata = {
+                        playerId: maybePlayerId.playerId,
+                        playerName: playerName.value,
+                    };
+                    CookieService.createSession(gameId.value, plyaerMetadata);
+                    const gamePath = new GamePath(gameId.value);
                     history.push(gamePath.getLocationDescriptor());
                 }
             })
@@ -315,7 +321,9 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
             this.services.gameService.createGame(playerName.value).then(maybeCreateGame => {
                 if (maybeCreateGame.success) {
                     const { gameId, playerId } = maybeCreateGame;
-                    history.push(new GamePath(gameId, playerId, playerName.value).getLocationDescriptor());
+                    const plyaerMetadata: IPlayerMetadata = { playerId, playerName: playerName.value };
+                    CookieService.createSession(gameId, plyaerMetadata);
+                    history.push(new GamePath(gameId).getLocationDescriptor());
                 }
             })
         }
@@ -337,7 +345,7 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
         }
     }
 
-    private onUserNameChange = (userName: string) => this.services.stateService.setUserName(userName);
+    private onPlayerNameChange = (playerName: string) => this.services.stateService.setPlayerName(playerName);
 
     private onGameIdChange = (gameId: string) => this.services.stateService.setGameId(gameId);
 }

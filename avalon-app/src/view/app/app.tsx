@@ -9,6 +9,7 @@ import { IGamePathParams, CreatePath, JoinPath} from "../../paths";
 import styles from "./app.module.scss";
 import { Classes } from "@blueprintjs/core";
 import { HomeAction } from "../../state";
+import { CookieService } from "../../common/cookie";
 
 class ConnectedApp extends React.PureComponent<RouteComponentProps<any>> {
     public render() {
@@ -50,8 +51,13 @@ class ConnectedApp extends React.PureComponent<RouteComponentProps<any>> {
 
     private renderGame = (routeProps: RouteComponentProps<IGamePathParams>) => {
         const { history, match } = routeProps;
-        const { gameId, playerId, playerName } = match.params;
-        return <Game gameId={gameId} playerId={playerId} playerName={playerName} history={history}/>;
+        const { gameId } = match.params;
+        return CookieService.getSession(gameId)
+            .map(playerMetadata => {
+                const { playerId, playerName } = playerMetadata;
+                return <Game gameId={gameId} playerId={playerId} playerName={playerName} history={history}/>;
+            }).getOrDefault(this.renderDefault())
+
     }
 
     private renderDefault = () => <NotFound />;

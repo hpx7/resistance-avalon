@@ -18,14 +18,14 @@ export class StateService {
         this.dispatch(SetGame.Clear.create(undefined));
     }
 
-    public setUserName(userName: string) {
-        this.dispatch(SetPlayerName.Success.create(userName));
+    public setPlayerName(playerName: string) {
+        this.dispatch(SetPlayerName.Success.create(playerName));
     }
 
-    public setGameId(gameUserId: string | undefined) {
-        this.dispatch(gameUserId == null
+    public setGameId(gameId: string | undefined) {
+        this.dispatch(gameId == null
             ? SetGameId.Clear.create(undefined)
-            : SetGameId.Success.create(gameUserId));
+            : SetGameId.Success.create(gameId));
     }
 
     public clearHomeState() {
