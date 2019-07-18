@@ -7,16 +7,12 @@ const api = (model, socket) => ({
     const gameId = utils.randomId()
     const playerId = utils.randomId()
     socket.join(playerId)
-    model.createGame(gameId, playerId, playerName, ({success}) => {
-      fn({gameId, playerId, success})
-    })
+    model.createGame(gameId, playerId, playerName, fn)
   },
   joinGame: (gameId, playerName, fn) => {
     const playerId = utils.randomId()
     socket.join(playerId)
-    model.joinGame(gameId, playerId, playerName, ({success}) => {
-      fn({playerId, success})
-    })
+    model.joinGame(gameId, playerId, playerName, fn)
   },
   rejoinGame: (playerId, fn) => {
     socket.join(playerId)
@@ -24,7 +20,7 @@ const api = (model, socket) => ({
       if (state) {
         socket.emit('game', state)
       }
-      fn({success: state ? true : false})
+      fn({error: state ? null : 'Game not found'})
     })
   },
   leaveGame: (playerId) => {
