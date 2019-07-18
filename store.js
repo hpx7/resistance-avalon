@@ -35,7 +35,8 @@ const GameModel = (games) => ({
         id: gameId,
         creator: playerName,
         players: [createPlayer(playerId, playerName)],
-        playerOrder: null,
+        playerOrder: [],
+        questConfiguration: [],
         currentQuest: null,
         questHistory: []
      },
@@ -224,18 +225,18 @@ const createPlayer = (playerId, playerName) => ({
 const rolesForVote = (vote) => vote < 0 ? evilRoles : Object.keys(roleKnowledge)
 
 const getState = (game, player) => {
-  return game
   const players = utils.sortBy(game.players, 'order')
   return {
     'id': game.id,
     'creator': game.creator,
     'players': players.map(p => p.name),
-    'roles': game.quests.length ? utils.flatMap(players, p => ({[p.role]: !evilRoles.includes(p.role)})) : {},
-    'questConfigurations': questConfigurations[players.length],
+    'roles': game.currentQuest ? utils.flatMap(players, p => ({[p.role]: !evilRoles.includes(p.role)})) : {},
+    'questConfigurations': game.questConfiguration,
     'myName': player.name,
     'myRole': player.role,
     'knowledge': getPlayerKnowledge(game, player),
-    'questAttempts': game.quests.map(quest => sanitizeQuest(game, quest, player)),
+    'currentQuest': game.currentQuest ? sanitizeQuest(game, game.currentQuest, player) : null,
+    'questHistory': game.questHistory.map(quest => sanitizeQuest(game, quest, player)),
     'status': getGameStatus(game)
   }
 }
@@ -262,13 +263,13 @@ const sanitizeQuest = (game, quest, player) => {
 }
 
 const getGameStatus = (game) => {
-  if (game.quests.length === 0)
+  if (!game.currentQuest)
     return 'not_started'
-  if (game.quests.filter(quest => getQuestStatus(game, quest) === 'passed').length > 2)
+  if (game.questHistory.filter(quest => getQuestStatus(game, quest) === 'passed').length > 2)
     return 'good_won'
-  if (game.quests.filter(quest => getQuestStatus(game, quest) === 'failed').length > 2)
+  if (game.questHistory.filter(quest => getQuestStatus(game, quest) === 'failed').length > 2)
     return 'evil_won'
-  if (game.quests.some(quest => quest.attemptNumber > 5))
+  if (game.questHistory.some(quest => quest.attemptNumber > 5))
     return 'evil_won'
   return 'in_progress'
 }
