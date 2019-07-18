@@ -125,19 +125,23 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         const { game: prevGameState } = prevProps;
         const { game, gameAction } = this.props;
         if (AsyncLoadedValue.isReady(prevGameState) && AsyncLoadedValue.isReady(game)) {
-            const { questAttempts, status } = game.value;
-            const { questAttempts: prevQuestAttempts, status: prevStatus } = prevGameState.value;
-            if (prevQuestAttempts.length > 0 && status === prevStatus) {
-                if (prevQuestAttempts.length + 1 === questAttempts.length) {
-                    CountableValue.of(prevQuestAttempts)
-                        .maybeGetLastElement()
+            const { currentQuest, questHistory, status } = game.value;
+            const {
+                currentQuest: prevQuestAttempt,
+                questHistory: prevQuestHistory,
+                status: prevStatus,
+            } = prevGameState.value;
+            if (status === prevStatus) {
+                if (prevQuestHistory.length + 1 === questHistory.length) {
+                    NullableValue.of(prevQuestAttempt)
                         .map(this.toastQuestStatusChange);
-                } else if (questAttempts.length === prevQuestAttempts.length) {
-                    CountableValue.of(game.value.questAttempts)
-                        .maybeGetLastElement()
+                } else if (questHistory.length === prevQuestHistory.length) {
+                    NullableValue.of(currentQuest)
                         .map(questAttempt => {
-                            const { status: prevState } = prevQuestAttempts[prevQuestAttempts.length - 1];
-                            if (prevState !== questAttempt.status) {
+                            const prevStatus = NullableValue.of(prevQuestAttempt)
+                                .map(({ status }) => status)
+                                .getOrUndefined();
+                            if (prevStatus !== questAttempt.status) {
                                 this.toastQuestStatusChange(questAttempt);
                             }
                             return undefined;
@@ -155,8 +159,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                 return;
             case GameAction.VIEW_QUESTS:
                 if (AsyncLoadedValue.isReady(game)) {
-                    CountableValue.of(game.value.questAttempts)
-                        .maybeGetLastElement()
+                    NullableValue.of(game.value.currentQuest)
                         .map(this.setDocumentTitleBasedOnQuestAttempt);
                 } else {
                     this.services.stateService.setDocumentTitle(STRINGS.AVALON);
@@ -293,9 +296,8 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                     </div>
                 );
             case GameAction.VIEW_QUESTS:
-                const countableQuests = CountableValue.of(game.questAttempts);
-                const prevQuestAttempt = countableQuests
-                    .maybeGetElementAtIndex(countableQuests.count() - 2)
+                const prevQuestAttempt = CountableValue.of(game.questHistory)
+                    .maybeGetLastElement()
                     .map<IPreviousQuestAttempt>(attempt => this.maybeRenderPreviousQuestAttempt(game, attempt));
                 return (
                     <div>
@@ -390,7 +392,8 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     private renderQuestHistory(game: IGame) {
-        const { questConfigurations, questAttempts } = game;
+        const { questConfigurations, questHistory, currentQuest } = game;
+        const allQuestAttempts = [...questHistory, currentQuest ].filter(NullableValue.isNotNullish);
         return NullableValue.of(questConfigurations)
             .map<JSX.Element | string>(presentQuestConfigurations => {
                 return (
@@ -400,7 +403,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                                 <Tag
                                     className={styles.roundNumber}
                                     key={`quest-${idx}`}
-                                    intent={this.getIntentForAttempt(questAttempts, idx + 1)}
+                                    intent={this.getIntentForAttempt(allQuestAttempts, idx + 1)}
                                     minimal={true}
                                     round={true}
                                 >
@@ -482,8 +485,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     private renderCurrentQuest(game: IGame) {
-        return CountableValue.of(game.questAttempts)
-            .maybeGetLastElement()
+        return NullableValue.of(game.currentQuest)
             .map(latestQuestAttempt => this.renderQuestAttemptMetadata(game, latestQuestAttempt))
             .getOrUndefined();
     }
@@ -516,8 +518,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     private maybeRenderCurrentQuestActions(game: IGame) {
-        return CountableValue.of(game.questAttempts)
-            .maybeGetLastElement()
+        return NullableValue.of(game.currentQuest)
             .map(latestQuestAttempt => this.renderCurrentQuestActions(game, latestQuestAttempt))
             .getOrDefault(this.renderGameNotStarted(game));
     }
@@ -658,11 +659,10 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     private maybeGetProposeQuestErrorMessage(game: IGame) {
-        const { questConfigurations, questAttempts, myName } = game;
+        const { questConfigurations, currentQuest, myName } = game;
         const { STRINGS } = UnconnectedGame;
         return NullableValue.of(questConfigurations)
-            .map(actualQuestConfigurations => CountableValue.of(questAttempts)
-                .maybeGetLastElement()
+            .map(actualQuestConfigurations => NullableValue.of(currentQuest)
                 .map(latestQuestAttempt => {
                     const { roundNumber, leader } = latestQuestAttempt;
                     if (actualQuestConfigurations.length < roundNumber) {

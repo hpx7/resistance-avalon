@@ -99,7 +99,8 @@ export interface IGame {
     knowledge: IKnowledge;
     players: string[];
     questConfigurations?: number[] | null;
-    questAttempts: IQuestAttempt[];
+    questHistory: IQuestAttempt[];
+    currentQuest?: IQuestAttempt | null;
     roles: { [key: string]: boolean };
     status: GameStatus;
 }
