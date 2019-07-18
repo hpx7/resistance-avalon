@@ -10,13 +10,15 @@ module.exports = {
       fn({success: true})
     }
   },
-  shuffle: (a) => {
-    for (let i = a.length - 1; i > 0; i--) {
+  shuffle: (items) => {
+    for (let i = items.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
+      [items[i], items[j]] = [items[j], items[i]];
     }
-    return a;
+    return items;
   },
+  rotate: (items, n) =>
+    items.slice(n, items.length).concat(items.slice(0, n)),
   flatMap: (items, mapFn) => {
     const result = {}
     items.forEach(item => {
