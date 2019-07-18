@@ -52,6 +52,20 @@ const GameModel = (games) => ({
     const shuffledRoles = utils.shuffle(roleList)
     const players = playerOrder.map((name, i) => ({order: ALPHABET[i], name, role: roleList[i]}))
     const leader = playerOrder[Math.floor(Math.random() * playerOrder.length)]
+    const startingQuest = {
+      id: utils.randomId(),
+      roundNumber: 1,
+      attemptNumber: 1,
+      size: questConfigurations[players.length][0],
+      leader: leader,
+      members: [],
+      votes: [],
+      results: [],
+      remainingVotes: players.length,
+      voteStatus: 0,
+      remainingResults: questConfigurations[players.length][0],
+      failures: 0
+    }
 
     games.updateOne(
       {
@@ -63,7 +77,7 @@ const GameModel = (games) => ({
       },
       {
         $set: {
-          currentQuest: createQuest(1, 1, leader, players.length),
+          currentQuest: startingQuest,
           playerOrder: utils.rotate(playerOrder, playerOrder.indexOf(leader)),
           questConfiguration: questConfigurations[players.length],
           ...utils.flatMap(players, ({order, role}) => (
@@ -206,27 +220,6 @@ const GameModel = (games) => ({
 const createPlayer = (playerId, playerName) => ({
   id: playerId, name: playerName, role: null, order: 0
 })
-
-const createQuest = (roundNumber, attemptNumber, leader, numPlayers) => ({
-  id: utils.randomId(),
-  roundNumber: roundNumber,
-  attemptNumber: attemptNumber,
-  size: questConfigurations[numPlayers][roundNumber - 1],
-  leader: leader,
-  members: [],
-  votes: [],
-  results: [],
-  remainingVotes: numPlayers,
-  voteStatus: 0,
-  remainingResults: questConfigurations[numPlayers][roundNumber - 1],
-  failures: 0
-})
-
-const getNextLeader = (game, quest) => {
-  const players = game.players.sort(cmp('order'))
-  const idx = players.findIndex(player => player.name === quest.leader)
-  return players[(idx + 1) % players.length].name
-}
 
 const rolesForVote = (vote) => vote < 0 ? evilRoles : Object.keys(roleKnowledge)
 
