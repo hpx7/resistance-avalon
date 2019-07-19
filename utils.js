@@ -3,7 +3,7 @@ module.exports = {
   callback: (fn) => (err, result) => {
     if (err) {
       console.error(err)
-      fn({error: err.message})
+      fn({error: 'Unexpected database error occurred'})
     } else if (result.modifiedCount === 0 || result.insertedCount === 0) {
       fn({error: 'Invalid operation'})
     } else {
