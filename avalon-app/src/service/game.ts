@@ -7,6 +7,9 @@ import { Supplier } from "../common/supplier";
 
 export class GameService {
     constructor(private store: Store<IApplicationState>, private gameService: IGameService) {
+        gameService.registerListener(game => {
+            this.store.dispatch(SetGame.Success(game));
+        });
     }
 
     public createGame(playerName: string) {
@@ -28,12 +31,9 @@ export class GameService {
     }
 
     public register(supplier: Supplier<string | undefined>) {
-        this.gameService.registerListener(game => {
-            this.store.dispatch(SetGame.Success(game));
-        });
         this.gameService.reJoinGame(supplier, gameStateResponse => {
-            if (!gameStateResponse.success) {
-                return SetGame.Failure("Could not rejoin game");
+            if (gameStateResponse.error != null) {
+                return SetGame.Failure(gameStateResponse.error);
             }
         })
     }
