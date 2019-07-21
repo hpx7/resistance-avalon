@@ -307,9 +307,9 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
                         playerId: maybePlayerId.playerId,
                         playerName: playerName.value,
                     };
-                    CookieService.createSession(gameId.value, plyaerMetadata);
                     const gamePath = new GamePath(gameId.value);
                     history.push(gamePath.getLocationDescriptor());
+                    CookieService.createSession(gameId.value, plyaerMetadata);
                 }
             })
         }
@@ -322,8 +322,8 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
                 if (maybeCreateGame.success) {
                     const { gameId, playerId } = maybeCreateGame;
                     const plyaerMetadata: IPlayerMetadata = { playerId, playerName: playerName.value };
-                    CookieService.createSession(gameId, plyaerMetadata);
                     history.push(new GamePath(gameId).getLocationDescriptor());
+                    CookieService.createSession(gameId, plyaerMetadata);
                 }
             })
         }
