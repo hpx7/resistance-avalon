@@ -10,6 +10,20 @@
     &:not(:last-child) {
         border-bottom: 1px solid $pt-dark-divider-white;
     }
+
+    .roleName {
+        display: flex;
+        align-items: center;
+    }
+
+    .infoIcon {
+        color: $gray1;
+        margin-left: $pt-grid-size;
+    }
+}
+
+.roleCount {
+    width: 15 * $pt-grid-size;
 }
 
 .configurationError {
@@ -22,12 +36,12 @@
     }
 }
 
-.configurationContent {
-    margin: $pt-grid-size 0 2 * $pt-grid-size 0;
+.addRole, .dndHelper, .playerOrderWarning, .configurationContent {
+    margin: $pt-grid-size 0;
 }
 
-.addRole, .dndHelper, .playerOrderWarning, .configurationError {
-    margin: $pt-grid-size 0;
+.configurationError, .startGameButton {
+    margin-top: $pt-grid-size;
 }
 
 .warning {
@@ -37,4 +51,8 @@
 .warningIcon {
     margin-right: $pt-grid-size / 2;
     margin-bottom: $pt-grid-size / 5;
+}
+
+.roleCountInfoTooltip {
+    padding: $pt-grid-size / 2 $pt-grid-size;
 }

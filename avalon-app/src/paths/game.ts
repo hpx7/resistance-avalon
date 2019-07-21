@@ -1,14 +1,14 @@
 import { RouteComponentProps } from "react-router";
 import { IPath } from "../common/path";
 
-export interface IGamePathParams {
+export interface IGamePathPathParams {
     gameId: string;
 }
 
-export class GamePath extends IPath {
+export class GamePath extends IPath<IGamePathPathParams> {
     public static readonly TEMPLATE = `/game/:gameId`;
 
-    public static fromRoute(routeProps: RouteComponentProps<IGamePathParams>) {
+    public static fromRoute(routeProps: RouteComponentProps<IGamePathPathParams>) {
         const { gameId } = routeProps.match.params;
         return new GamePath(gameId);
     }

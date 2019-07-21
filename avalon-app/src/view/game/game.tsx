@@ -122,31 +122,31 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     public componentDidUpdate(prevProps: GameProps) {
-        const { game: prevGameState } = prevProps;
+        const { game: prevGame } = prevProps;
         const { game, gameAction } = this.props;
-        if (AsyncLoadedValue.isReady(prevGameState) && AsyncLoadedValue.isReady(game)) {
+        if (AsyncLoadedValue.isReady(prevGame) && AsyncLoadedValue.isReady(game)) {
             const { currentQuest, questHistory, status } = game.value;
             const {
                 currentQuest: prevQuestAttempt,
                 questHistory: prevQuestHistory,
                 status: prevStatus,
-            } = prevGameState.value;
+            } = prevGame.value;
             if (status === prevStatus) {
                 if (prevQuestHistory.length + 1 === questHistory.length) {
-                    NullableValue.of(prevQuestAttempt)
+                    CountableValue.of(questHistory)
+                        .maybeGetLastElement()
                         .map(this.toastQuestStatusChange);
                 } else if (questHistory.length === prevQuestHistory.length) {
+                    const prevStatus = NullableValue.of(prevQuestAttempt)
+                        .map(({ status }) => status)
+                        .getOrUndefined();
                     NullableValue.of(currentQuest)
-                        .map(questAttempt => {
-                            const prevStatus = NullableValue.of(prevQuestAttempt)
-                                .map(({ status }) => status)
-                                .getOrUndefined();
-                            if (prevStatus !== questAttempt.status) {
-                                this.toastQuestStatusChange(questAttempt);
-                            }
-                            return undefined;
-                        });
+                        .map(questAttempt => prevStatus !== questAttempt.status
+                            ? this.toastQuestStatusChange(questAttempt)
+                            : undefined);
                 }
+            } else {
+                this.toastGameStatusChange(status);
             }
         }
         const { STRINGS } = UnconnectedGame;
@@ -244,7 +244,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                             history={history}
                         />
                     );
-                }
+                };
                 return (
                     <div>
                         <H2 className={styles.gameHeader}>{STRINGS.WAITING_FOR_PLAYERS}</H2>
@@ -255,7 +255,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                             showMyself={true}
                         />
                     </div>
-                )
+                );
             case GameStatus.IN_PROGRESS:
                 return this.renderInProgressGame(game.value);
             case GameStatus.GOOD_WON:
@@ -265,7 +265,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                         title={STRINGS.GOOD_WON}
                         intent={Intent.SUCCESS}
                     />
-                )
+                );
             case GameStatus.EVIL_WON:
                 return (
                     <Callout
@@ -273,7 +273,9 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                         title={STRINGS.EVIL_WON}
                         intent={Intent.DANGER}
                     />
-                )
+                );
+            default:
+                return assertNever(status);
         }
     }
 
@@ -778,6 +780,8 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                 return STRINGS.QUEST_PASSED_TITLE;
             case QuestAttemptStatus.FAILED:
                 return STRINGS.QUEST_FAILED_TITLE;
+            default:
+                return assertNever(status);
         }
     }
 
@@ -799,6 +803,22 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
             case QuestAttemptStatus.PENDING_QUEST_RESULTS:
                 const leaderText = `${leader}\`` + (leader.endsWith("s") ? "" : "s");
                 return this.services.stateService.showSuccessToast(`${leaderText} proposal was approved!`);
+            default:
+                return assertNever(status);
+        }
+    }
+
+    private toastGameStatusChange(status: GameStatus) {
+        const { stateService } = this.services;
+        switch (status) {
+            case GameStatus.NOT_STARTED:
+                return stateService.showInProgressToast("The game was created");
+            case GameStatus.IN_PROGRESS:
+                return stateService.showInProgressToast("The game has started");
+            case GameStatus.GOOD_WON:
+                return stateService.showSuccessToast("Good won!");
+            case GameStatus.EVIL_WON:
+                return stateService.showFailToast("Evil won!");
             default:
                 return assertNever(status);
         }
