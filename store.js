@@ -292,11 +292,11 @@ const didQuestPass = (game, quest) => {
 }
 
 exports.init = (onReady) => {
-  mongodb.MongoClient.connect(process.env.MONGODB_URI).then(client => {
-    const games = client.db().collection('games')
-    onReady(GameModel(games))
-  })
-  .catch(err => {
-    console.error(err)
+  mongodb.MongoClient.connect(process.env.MONGODB_URI, {useNewUrlParser: true}, (err, client) => {
+    if (err) {
+      console.error(err)
+    } else {
+      onReady(GameModel(client.db().collection('games')))
+    }
   })
 }

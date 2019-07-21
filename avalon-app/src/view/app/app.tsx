@@ -5,7 +5,7 @@ import { Home } from "../home/home";
 import { GamePath } from "../../paths";
 import { Game } from "../game/game";
 import { NotFound } from "../notFound/notFound";
-import { IGamePathParams, CreatePath, JoinPath} from "../../paths";
+import { IGamePathPathParams, CreatePath, JoinPath} from "../../paths";
 import styles from "./app.module.scss";
 import { Classes } from "@blueprintjs/core";
 import { HomeAction } from "../../state";
@@ -49,7 +49,7 @@ class ConnectedApp extends React.PureComponent<RouteComponentProps<any>> {
         );
     };
 
-    private renderGame = (routeProps: RouteComponentProps<IGamePathParams>) => {
+    private renderGame = (routeProps: RouteComponentProps<IGamePathPathParams>) => {
         const { history, match } = routeProps;
         const { gameId } = match.params;
         return CookieService.getSession(gameId)
