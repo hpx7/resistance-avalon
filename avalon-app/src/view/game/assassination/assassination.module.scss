@@ -1,0 +1,15 @@
+@import "~@blueprintjs/core/lib/scss/variables";
+
+.configurationError {
+    color: $red5;
+    display: flex;
+    align-items: center;
+
+    :global(.#{$ns}-icon) {
+        margin-right: $pt-grid-size / 2;
+    }
+}
+
+.configurationError, .assassinationButton {
+    margin-top: $pt-grid-size;
+}

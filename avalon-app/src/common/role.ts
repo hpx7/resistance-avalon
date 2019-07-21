@@ -2,19 +2,6 @@ import { Role } from "../state";
 import { sum } from "lodash-es";
 import { TernaryValue } from "./ternary";
 
-const roleRecord: Record<Role, boolean> = {
-    [Role.MERLIN]: true,
-    [Role.MORGANA]: false,
-    [Role.PERCIVAL]: true,
-    [Role.MORDRED]: false,
-    [Role.OBERON]: false,
-    [Role.ASSASSIN]: false,
-    [Role.LOYAL_SERVANT]: true,
-    [Role.MINION]: false,
-}
-
-export const ROLES: Role[] = Object.keys(roleRecord) as Role[];
-
 export function getRoleCounts(roles: Role[]): Map<Role, number> {
     return roles.reduce((roleCountMap, cur) => {
         const prevCount: number = roleCountMap.get(cur) || 0;
@@ -23,12 +10,14 @@ export function getRoleCounts(roles: Role[]): Map<Role, number> {
     }, new Map<Role, number>());
 }
 
-export function getNumGoodRoles(roles: Record<Role, number>): number {
-    return sum(ROLES.map(role => roleRecord[role] ? roles[role] : 0));
+export function getNumGoodRoles(roleCounts: Record<Role, number>, roleRecord: { [key: string]: boolean; }): number {
+    const roles: Role[] = Object.keys(roleCounts) as Role[];
+    return sum(roles.map(role => roleRecord[role] ? roleCounts[role] : 0));
 }
 
-export function getNumRoles(roles: Record<Role, number>): number {
-    return sum(ROLES.map(role => roles[role]));
+export function getNumRoles(roleCounts: Record<Role, number>): number {
+    const roles: Role[] = Object.keys(roleCounts) as Role[];
+    return sum(roles.map(role => roleCounts[role]));
 }
 
 export function calcNumGoodPlayers(numPlayers: number) {

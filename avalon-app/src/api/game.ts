@@ -20,6 +20,8 @@ export interface IVoteOnQuestResponse extends IBaseResponse {}
 
 export interface IRejoinResponse extends IBaseResponse {}
 
+export interface IAssassinateResponse extends IBaseResponse {}
+
 export interface IGameService {
     createGame(playerName: string): Promise<ICreateGameResponse>;
     joinGame(gameId: string, playerName: string): Promise<IJoinGameResponse>;
@@ -47,6 +49,11 @@ export interface IGameService {
         playerId: string,
         playerName: string,
         vote: Vote): Promise<IVoteOnQuestResponse>;
+    assassinate(
+        questId: string,
+        playerId: string,
+        playerName: string,
+        target: string): Promise<IAssassinateResponse>;
 }
 
 export class GameService implements IGameService {
@@ -148,6 +155,22 @@ export class GameService implements IGameService {
                 playerId,
                 playerName,
                 vote,
+                this.emitCallback(resolve, reject));
+        });
+    }
+
+    public assassinate(
+        questId: string,
+        playerId: string,
+        playerName: string,
+        target: string): Promise<IAssassinateResponse> {
+        return new Promise<IAssassinateResponse>((resolve, reject) => {
+            this.socket.emit(
+                "assassinate",
+                questId,
+                playerId,
+                playerName,
+                target,
                 this.emitCallback(resolve, reject));
         });
     }
