@@ -3,24 +3,12 @@ import { Supplier } from "../common/supplier";
 import { NullableValue } from "../common/nullableValue";
 
 interface IBaseResponse {
-    success: boolean;
+    error?: string | null;
 }
 
-interface IFailureResponse extends IBaseResponse {
-    success: false;
-}
+export interface ICreateGameResponse extends IBaseResponse {}
 
-interface ICreateGameSuccessResponse extends IBaseResponse {
-    success: true;
-    gameId: string;
-    playerId: string;
-}
-
-export type ICreateGameResponse = ICreateGameSuccessResponse | IFailureResponse;
-
-export interface IJoinGameResponse extends IBaseResponse {
-    playerId: string;
-}
+export interface IJoinGameResponse extends IBaseResponse {}
 
 export interface IStartGameResponse extends IBaseResponse {}
 
@@ -31,13 +19,6 @@ export interface IVoteOnQuestProposalResponse extends IBaseResponse {}
 export interface IVoteOnQuestResponse extends IBaseResponse {}
 
 export interface IRejoinResponse extends IBaseResponse {}
-
-interface IGameStateSuccessResponse extends IBaseResponse {
-    success: true;
-    game: IGame;
-}
-
-export type IGameStateResponse = IGameStateSuccessResponse | IFailureResponse;
 
 export interface IGameService {
     createGame(playerName: string): Promise<ICreateGameResponse>;
@@ -174,10 +155,10 @@ export class GameService implements IGameService {
     private emitCallback = <T extends IBaseResponse>(
         resolve: (value?: T | PromiseLike<T>) => void,
         reject: (reason?: any) => void) => (response: T) => {
-            if (response.success) {
+            if (response.error == null) {
                 resolve(response);
             } else {
-                reject(response);
+                reject(response.error);
             }
     };
 }

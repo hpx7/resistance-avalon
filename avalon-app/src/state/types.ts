@@ -95,6 +95,7 @@ export interface IGame {
     id: string;
     creator: string;
     myName: string;
+    myId: string;
     myRole?: Role | null;
     knowledge: IKnowledge;
     players: string[];

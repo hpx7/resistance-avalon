@@ -11,13 +11,13 @@ import {
 } from "@blueprintjs/core";
 import styles from "./home.module.scss";
 import { IHomeState } from "../../state";
-import { IApplicationState, HomeAction, IPlayerMetadata } from "../../state/types";
+import { IApplicationState, HomeAction, IPlayerMetadata, IGame } from "../../state/types";
 import { connect } from "react-redux";
 import { ContextType, getServices } from "../../common/contextProvider";
 import { handleStringChange } from "../../common/handleStringChange";
 import classNames from "classnames";
 import { History } from "history";
-import { AsyncLoadedValue } from "../../common/redoodle";
+import { AsyncLoadedValue, IAsyncLoaded } from "../../common/redoodle";
 import sharedStyles from "../../styles/styles.module.scss";
 import { assertNever } from "../../common/assertNever";
 import { GamePath, JoinPath, CreatePath } from "../../paths";
@@ -33,7 +33,11 @@ interface IOwnProps {
     homeAction: HomeAction;
 }
 
-type HomeProps = IOwnProps & IHomeState;
+interface IStateProps extends IHomeState {
+    game: IAsyncLoaded<IGame, string>;
+}
+
+type HomeProps = IOwnProps & IStateProps;
 
 interface IState {
     showQRCodeReader: boolean;
@@ -76,12 +80,20 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
         if (gameIdQueryParam != null) {
             this.services.stateService.setGameId(gameIdQueryParam);
         }
+
     }
 
     public componentDidUpdate(prevProps: HomeProps) {
-        const { gameIdQueryParam } = this.props;
+        const { gameIdQueryParam, game } = this.props;
         if (gameIdQueryParam !== prevProps.gameIdQueryParam) {
             this.services.stateService.setGameId(gameIdQueryParam);
+        }
+        const { game: prevGame } = prevProps;
+        if (AsyncLoadedValue.isReady(game)) {
+            if (!AsyncLoadedValue.isReady(prevGame) || prevGame.value.id !== game.value.id) {
+                const { id, myName, myId } = game.value;
+                this.storeCookieAndRedirect(id, { playerId: myId, playerName: myName });
+            }
         }
     }
 
@@ -302,28 +314,14 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
     private tryToJoinGame = () => {
         const { gameId, playerName } = this.props;
         if (AsyncLoadedValue.isReady(gameId) && AsyncLoadedValue.isReady(playerName)) {
-            this.services.gameService.joinGame(gameId.value, playerName.value).then(maybePlayerId => {
-                if (maybePlayerId != null && maybePlayerId.success) {
-                    const playerMetadata: IPlayerMetadata = {
-                        playerId: maybePlayerId.playerId,
-                        playerName: playerName.value,
-                    };
-                    this.storeCookieAndRedirect(gameId.value, playerMetadata);
-                }
-            })
+            this.services.gameService.joinGame(gameId.value, playerName.value);
         }
     }
 
     private tryToCreateGame = () => {
         const { gameId, playerName } = this.props;
         if (AsyncLoadedValue.isNotStartedLoading(gameId) && AsyncLoadedValue.isReady(playerName)) {
-            this.services.gameService.createGame(playerName.value).then(maybeCreateGame => {
-                if (maybeCreateGame.success) {
-                    const { gameId, playerId } = maybeCreateGame;
-                    const playerMetadata: IPlayerMetadata = { playerId, playerName: playerName.value };
-                    this.storeCookieAndRedirect(gameId, playerMetadata);
-                }
-            })
+            this.services.gameService.createGame(playerName.value);
         }
     }
 
@@ -360,6 +358,11 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
     }
 }
 
-const mapStateToProps = (appState: IApplicationState): IHomeState => appState.homeState;
+function mapStateToProps(appState: IApplicationState): IStateProps {
+    return {
+        ...appState.homeState,
+        game: appState.gameState.game,
+    }
+}
 
 export const Home = connect(mapStateToProps)(UnconnectedHome);
