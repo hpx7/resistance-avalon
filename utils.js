@@ -3,11 +3,11 @@ module.exports = {
   callback: (fn) => (err, result) => {
     if (err) {
       console.error(err)
-      fn({success: false})
-    } else if (result.modifiedCount === 0) {
-      fn({success: false})
+      fn({error: 'Unexpected database error occurred'})
+    } else if (result.modifiedCount === 0 || result.insertedCount === 0) {
+      fn({error: 'Invalid operation'})
     } else {
-      fn({success: true})
+      fn({error: null})
     }
   },
   shuffle: (items) => {

@@ -232,6 +232,7 @@ const getState = (game, player) => {
     'players': players.map(p => p.name),
     'roles': game.currentQuest ? utils.flatMap(players, p => ({[p.role]: !evilRoles.includes(p.role)})) : {},
     'questConfigurations': game.questConfiguration,
+    'myId': player.id,
     'myName': player.name,
     'myRole': player.role,
     'knowledge': getPlayerKnowledge(game, player),
