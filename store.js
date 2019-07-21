@@ -210,7 +210,7 @@ const GameModel = (games) => ({
       {$set: {assassinTarget: target}},
       utils.callback(fn)
     )
-  }
+  },
   fetchState: (playerId, fn) => {
     games.findOne({'players.id': playerId}, (err, game) => {
       if (err) {
