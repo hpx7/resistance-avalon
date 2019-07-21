@@ -26,7 +26,6 @@ const createStoreWithMiddleware = middlewareEnhancer(createStore);
 const store = createStoreWithMiddleware(appReducer as Reducer<IApplicationState>, createInitialState(history));
 
 const api = createApi({ gameServiceApi: "" });
-CookieService.devMode();
 
 const stateService = new StateService(store.dispatch);
 const gameService = new GameService(store, api.gameService);
