@@ -15,6 +15,7 @@ import { createApi } from "./common/createApi";
 import { toasterMiddleware, titleMiddleware } from "./middleware";
 import { IApplicationState } from "./state/types";
 import { createBrowserHistory } from "history";
+import { CookieService } from "./common/cookie";
 
 const history = createBrowserHistory();
 const middlewareEnhancer = composeWithDevTools(applyMiddleware(
@@ -28,7 +29,9 @@ const api = createApi({ gameServiceApi: "" });
 
 const stateService = new StateService(store.dispatch);
 const gameService = new GameService(store, api.gameService);
-
+if (process.env.NODE_ENV === "development") {
+    CookieService.devMode()
+}
 ReactDOM.render(
     <Provider store={store}>
         <ContextProvider
