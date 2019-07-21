@@ -15,7 +15,6 @@ import { createApi } from "./common/createApi";
 import { toasterMiddleware, titleMiddleware } from "./middleware";
 import { IApplicationState } from "./state/types";
 import { createBrowserHistory } from "history";
-import { CookieService } from "./common/cookie";
 
 const history = createBrowserHistory();
 const middlewareEnhancer = composeWithDevTools(applyMiddleware(

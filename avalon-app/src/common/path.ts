@@ -23,7 +23,7 @@ export abstract class IPath<P = {}, Q = {}> {
 
     public getSearch(): Search | undefined {
         const queryParams = this.getQueryParams();
-        return isEmpty(queryParams) ? undefined : queryString.stringify(queryParams as any);
+        return isEmpty(queryParams) ? undefined : queryString.stringify(queryParams);
     }
 
     public getPathInfo(): IPathInfo {

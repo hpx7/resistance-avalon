@@ -14,9 +14,6 @@ export class CookieService {
     private static COOKIE_OPTIONS: CookieOptions = {
         domain: window.location.hostname,
         expires: 7,
-        httponly: true,
-        samesite: "Strict",
-        secure: true,
     }
 
     private static useCookies: boolean = true;
@@ -27,11 +24,13 @@ export class CookieService {
         CookieService.useCookies = false;
     }
 
+    public static doesUseCookies() {
+        return CookieService.useCookies;
+    }
+
     public static createSession(gameId: string, playerMetadata: IPlayerMetadata) {
         if (CookieService.useCookies) {
             setCookie(gameId, JSON.stringify(playerMetadata), CookieService.COOKIE_OPTIONS);
-        } else {
-            window.location.search = window.location.search + queryString.stringify(playerMetadata);
         }
     }
 

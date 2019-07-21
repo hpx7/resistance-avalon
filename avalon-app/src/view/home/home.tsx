@@ -25,6 +25,7 @@ import QrReader from "react-qr-reader";
 import isUrl from "is-url";
 import { IconNames } from "@blueprintjs/icons";
 import { CookieService } from "../../common/cookie";
+import * as queryString from "query-string";
 
 interface IOwnProps {
     history: History;
@@ -299,31 +300,28 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
     }
 
     private tryToJoinGame = () => {
-        const { gameId, playerName, history } = this.props;
+        const { gameId, playerName } = this.props;
         if (AsyncLoadedValue.isReady(gameId) && AsyncLoadedValue.isReady(playerName)) {
             this.services.gameService.joinGame(gameId.value, playerName.value).then(maybePlayerId => {
                 if (maybePlayerId != null && maybePlayerId.success) {
-                    const plyaerMetadata: IPlayerMetadata = {
+                    const playerMetadata: IPlayerMetadata = {
                         playerId: maybePlayerId.playerId,
                         playerName: playerName.value,
                     };
-                    const gamePath = new GamePath(gameId.value);
-                    history.push(gamePath.getLocationDescriptor());
-                    CookieService.createSession(gameId.value, plyaerMetadata);
+                    this.storeCookieAndRedirect(gameId.value, playerMetadata);
                 }
             })
         }
     }
 
     private tryToCreateGame = () => {
-        const { gameId, playerName, history } = this.props;
+        const { gameId, playerName } = this.props;
         if (AsyncLoadedValue.isNotStartedLoading(gameId) && AsyncLoadedValue.isReady(playerName)) {
             this.services.gameService.createGame(playerName.value).then(maybeCreateGame => {
                 if (maybeCreateGame.success) {
                     const { gameId, playerId } = maybeCreateGame;
-                    const plyaerMetadata: IPlayerMetadata = { playerId, playerName: playerName.value };
-                    history.push(new GamePath(gameId).getLocationDescriptor());
-                    CookieService.createSession(gameId, plyaerMetadata);
+                    const playerMetadata: IPlayerMetadata = { playerId, playerName: playerName.value };
+                    this.storeCookieAndRedirect(gameId, playerMetadata);
                 }
             })
         }
@@ -348,6 +346,18 @@ class UnconnectedHome extends React.PureComponent<HomeProps, IState> {
     private onPlayerNameChange = (playerName: string) => this.services.stateService.setPlayerName(playerName);
 
     private onGameIdChange = (gameId: string) => this.services.stateService.setGameId(gameId);
+
+    private storeCookieAndRedirect(gameId: string, playerMetadata: IPlayerMetadata) {
+        const { history } = this.props;
+        const locationDescriptor = new GamePath(gameId).getLocationDescriptor();
+        if (CookieService.doesUseCookies()) {
+            CookieService.createSession(gameId, playerMetadata);
+            history.push(locationDescriptor);
+        } else {
+            locationDescriptor.search = queryString.stringify(playerMetadata);
+            history.push(locationDescriptor);
+        }
+    }
 }
 
 const mapStateToProps = (appState: IApplicationState): IHomeState => appState.homeState;
