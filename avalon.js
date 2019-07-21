@@ -6,25 +6,25 @@ const api = (model, socket) => ({
   createGame: (playerName, fn) => {
     const gameId = utils.randomId()
     const playerId = utils.randomId()
-    socket.join(playerId)
+    socket.join(gameId + playerId)
     model.createGame(gameId, playerId, playerName, fn)
   },
   joinGame: (gameId, playerName, fn) => {
     const playerId = utils.randomId()
-    socket.join(playerId)
+    socket.join(gameId + playerId)
     model.joinGame(gameId, playerId, playerName, fn)
   },
-  rejoinGame: (playerId, fn) => {
-    socket.join(playerId)
-    model.fetchState(playerId, (state) => {
+  subscribeToGame: (gameId, playerId, fn) => {
+    socket.join(gameId + playerId)
+    model.fetchState(gameId, playerId, (state) => {
       if (state) {
         socket.emit('game', state)
       }
       fn({error: state ? null : 'Game not found'})
     })
   },
-  leaveGame: (playerId) => {
-    socket.leave(playerId)
+  unsubscribeFromGame: (gameId, playerId) => {
+    socket.leave(gameId + playerId)
   },
   startGame: (gameId, playerId, playerName, roleList, playerOrder, fn) => {
     model.startGame(gameId, playerId, playerName, roleList, playerOrder, fn)
@@ -43,7 +43,7 @@ const api = (model, socket) => ({
 store.init((model) => {
   const io = server(process.env.PORT)
 
-  model.onUpdate((playerId, state) => io.to(playerId).emit('game', state))
+  model.onUpdate((gameId, playerId, state) => io.to(gameId + playerId).emit('game', state))
 
   io.on('connection', (socket) => {
     console.log(socket.id + ' connection')

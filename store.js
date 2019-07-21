@@ -199,13 +199,13 @@ const GameModel = (games) => ({
       utils.callback(fn)
     )
   },
-  fetchState: (playerId, fn) => {
-    games.findOne({'players.id': playerId}, (err, game) => {
+  fetchState: (gameId, playerId, fn) => {
+    games.findOne({id: gameId}, (err, game) => {
       if (err) {
         console.error(err)
         fn(null)
       } else {
-        const player = game.players.find(player => player.id === playerId)
+        const player = game.players.find(player => player.id === playerId) || {}
         fn(getState(game, player))
       }
     })
@@ -213,7 +213,8 @@ const GameModel = (games) => ({
   onUpdate: (fn) => {
     games.watch({fullDocument: 'updateLookup'}).on('change', data => {
       const game = data.fullDocument
-      game.players.forEach(player => fn(player.id, getState(game, player)))
+      game.players.forEach(player => fn(game.id, player.id, getState(game, player)))
+      fn(game.id, '', getState(game, {}))
     })
   }
 })
