@@ -1,15 +1,20 @@
 @import "~@blueprintjs/core/lib/scss/variables";
 
+.roleRow {
+    display: flex;
+    flex-direction: column;
+
+    &:not(:last-child) {
+        border-bottom: 1px solid $pt-dark-divider-white;
+    }
+}
+
 .role {
     height: 5 * $pt-grid-size;
     display: flex;
     align-items: center;
     padding: $pt-grid-size;
     justify-content: space-between;
-
-    &:not(:last-child) {
-        border-bottom: 1px solid $pt-dark-divider-white;
-    }
 
     .roleName {
         display: flex;
@@ -26,14 +31,25 @@
     width: 15 * $pt-grid-size;
 }
 
-.configurationError {
-    color: $red5;
+.configurationError, .roleWarning {
     display: flex;
     align-items: center;
 
     :global(.#{$ns}-icon) {
         margin-right: $pt-grid-size / 2;
     }
+
+    .error {
+        color: $red5;
+    }
+
+    .warning {
+        color: $orange5;
+    }
+}
+
+.roleWarning {
+    margin-bottom: $pt-grid-size;
 }
 
 .addRole, .dndHelper, .playerOrderWarning, .configurationContent {
