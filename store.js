@@ -284,9 +284,10 @@ const getGameStatus = (game) => {
     return 'evil_won'
   if (game.questHistory.filter(quest => getQuestStatus(game, quest) === 'passed').length <= 2)
     return 'in_progress'
-  if (game.assassinTarget === null)
+  if (game.assassinTarget === null && game.players.filter(player => player.role === 'assassin').length === 1)
     return 'assassinating'
-  if (game.assassinTarget === game.players.filter(player => player.role === 'merlin'))
+  const merlin = game.players.filter(player => player.role === 'merlin');
+  if (merlin.length === 1 && game.assassinTarget === merlin[0].name)
     return 'evil_won'
   return 'good_won'
 }
