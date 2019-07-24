@@ -63,4 +63,4 @@ class ConnectedApp extends React.PureComponent<RouteComponentProps<any>> {
     private renderDefault = () => <NotFound />;
 }
 
-export const App = withRouter<RouteComponentProps<any>>(ConnectedApp);
+export const App = withRouter(ConnectedApp);

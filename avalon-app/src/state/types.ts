@@ -54,7 +54,7 @@ export enum QuestAttemptStatus {
 }
 
 export enum GameStatus {
-    ASSASSNATING = "assassinating",
+    ASSASSINATING = "assassinating",
     NOT_STARTED = "not_started",
     IN_PROGRESS = "in_progress",
     GOOD_WON = "good_won",
