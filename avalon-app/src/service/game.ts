@@ -74,4 +74,15 @@ export class GameService {
                 this.store.dispatch(CreateToast.Failure.create(error));
             });
     }
+
+    public assassinate(
+        questId: string,
+        playerId: string,
+        playerName: string,
+        target: string) {
+        this.gameService.assassinate(questId, playerId, playerName, target)
+            .catch(error => {
+                this.store.dispatch(CreateToast.Failure.create(error));
+            });
+    }
 }

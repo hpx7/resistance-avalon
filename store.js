@@ -38,7 +38,8 @@ const GameModel = (games) => ({
         playerOrder: [],
         questConfiguration: [],
         currentQuest: null,
-        questHistory: []
+        questHistory: [],
+        assassinTarget: null
      },
      utils.callback(fn))
   },
@@ -109,7 +110,7 @@ const GameModel = (games) => ({
       $and: [
         {$eq: ['$currentQuest.remainingVotes', 0]},
         {$lt: ['$currentQuest.voteStatus', 0]},
-        {$lte: ['$currentQuest.attemptNumber', 5]}
+        {$lt: ['$currentQuest.attemptNumber', 5]}
       ]
     }
     const nextQuestAttempt = {
@@ -199,6 +200,17 @@ const GameModel = (games) => ({
       utils.callback(fn)
     )
   },
+  assassinate: (gameId, playerId, playerName, target, fn) => {
+    games.updateOne(
+      {
+        id: gameId,
+        players: {$elemMatch: {id: playerId, name: playerName, role: 'assassin'}},
+        assassinTarget: null
+      },
+      {$set: {assassinTarget: target}},
+      utils.callback(fn)
+    )
+  },
   fetchState: (gameId, playerId, fn) => {
     games.findOne({id: gameId}, (err, game) => {
       if (err) {
@@ -267,13 +279,17 @@ const sanitizeQuest = (game, quest, player) => {
 const getGameStatus = (game) => {
   if (!game.currentQuest)
     return 'not_started'
-  if (game.questHistory.filter(quest => getQuestStatus(game, quest) === 'passed').length > 2)
-    return 'good_won'
-  if (game.questHistory.filter(quest => getQuestStatus(game, quest) === 'failed').length > 2)
-    return 'evil_won'
   if (game.questHistory.some(quest => quest.attemptNumber > 5))
     return 'evil_won'
-  return 'in_progress'
+  if (game.questHistory.filter(quest => getQuestStatus(game, quest) === 'failed').length > 2)
+    return 'evil_won'
+  if (game.questHistory.filter(quest => getQuestStatus(game, quest) === 'passed').length <= 2)
+    return 'in_progress'
+  if (game.assassinTarget === null)
+    return 'assassinating'
+  if (game.assassinTarget === game.players.find(player => player.role === 'merlin').name)
+    return 'evil_won'
+  return 'good_won'
 }
 
 const getQuestStatus = (game, quest) => {

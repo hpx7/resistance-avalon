@@ -37,6 +37,9 @@ const api = (model, socket) => ({
   },
   voteInQuest: (questId, playerId, playerName, vote, fn) => {
     model.voteInQuest(questId, playerId, playerName, vote, fn)
+  },
+  assassinate: (gameId, playerId, playerName, target, fn) => {
+    model.assassinate(gameId, playerId, playerName, target, fn)
   }
 })
 
