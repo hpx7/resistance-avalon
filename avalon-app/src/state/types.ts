@@ -54,6 +54,7 @@ export enum QuestAttemptStatus {
 }
 
 export enum GameStatus {
+    ASSASSNATING = "assassinating",
     NOT_STARTED = "not_started",
     IN_PROGRESS = "in_progress",
     GOOD_WON = "good_won",
@@ -104,6 +105,7 @@ export interface IGame {
     currentQuest?: IQuestAttempt | null;
     roles: { [key: string]: boolean };
     status: GameStatus;
+    assassinTarget?: string | null;
 }
 
 export interface IEndpoints {

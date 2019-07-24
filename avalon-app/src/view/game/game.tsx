@@ -39,6 +39,7 @@ import { voteToString } from "../../common/vote";
 import { JoinPath } from "../../paths";
 import { Supplier } from "../../common/supplier";
 import pluralize from "pluralize";
+import { Assassination } from "./assassination/assassination";
 
 interface IOwnProps {
     history: History;
@@ -50,6 +51,7 @@ interface IOwnProps {
 interface IState {
     questMembers: string[];
     selectedTabId: QuestTab;
+    assassinationTarget?: string;
 }
 
 enum QuestTab {
@@ -227,7 +229,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
     }
 
     private renderContent() {
-        const { game, playerId, gameId, history } = this.props;
+        const { game, playerId, playerName, gameId, history } = this.props;
         if (!AsyncLoadedValue.isReady(game)) {
             return this.renderGameSkeleton();
         }
@@ -272,6 +274,15 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                         icon={IconNames.THUMBS_UP}
                         title={STRINGS.EVIL_WON}
                         intent={Intent.DANGER}
+                    />
+                );
+            case GameStatus.ASSASSNATING:
+                return (
+                    <Assassination
+                        game={game.value}
+                        playerId={playerId}
+                        playerName={playerName}
+                        gameId={gameId}
                     />
                 );
             default:
@@ -760,6 +771,18 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
 
     private setAction = (action: GameAction) => () => this.services.stateService.setGameAction(action);
 
+    private selectAssinationTarget = (target: string) => () => this.setState({ assassinationTarget: target });
+
+    private confirmAssinationTarget = () => {
+        const { assassinationTarget } = this.state;
+        const { gameId, playerId, playerName } = this.props;
+        NullableValue.of(assassinationTarget)
+            .map(target => {
+                this.services.gameService.assassinate(gameId, playerId, playerName, target);
+                return undefined;
+            });
+    }
+
     private setDocumentTitleBasedOnQuestAttempt = (questAttempt: IQuestAttempt) => {
         this.services.stateService.setDocumentTitle(this.getTitleFOrQuestAttempt(questAttempt));
     }
@@ -819,6 +842,8 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                 return stateService.showSuccessToast("Good won!");
             case GameStatus.EVIL_WON:
                 return stateService.showFailToast("Evil won!");
+            case GameStatus.ASSASSNATING:
+                return stateService.showFailToast("3 quests succeeded! Assassin, did you find Merlin?");
             default:
                 return assertNever(status);
         }

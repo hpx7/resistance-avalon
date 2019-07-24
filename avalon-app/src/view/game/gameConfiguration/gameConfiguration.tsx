@@ -23,12 +23,19 @@ import { IconNames } from "@blueprintjs/icons";
 import { assertNever } from "../../../common/assertNever";
 import { isEqual, times, constant, flatten } from "lodash-es";
 import { CountableValue } from "../../../common/countableValue";
-import { getNumGoodRoles, ROLES, getNumRoles, calcNumGoodPlayers } from "../../../common/role";
+import {
+    getNumGoodRoles,
+    getNumRoles,
+    calcNumGoodPlayers,
+    MAX_ONE_ROLES,
+    getUnmetDependenciesMessageForRole
+} from "../../../common/role";
 import { NullableValue } from "../../../common/nullableValue"
 import { Clipboard } from "ts-clipboard";
 import { JoinPath } from "../../../paths";
 import { QRCode } from "../qrcode/qrcode";
 import { Popover } from "@blueprintjs/core";
+import pluralize from "pluralize";
 
 interface IGameConfigurationProps {
     history: History;
@@ -55,17 +62,14 @@ const ROLE_LIMIT = 1;
 
 const roleRecord: Record<Role, number> = {
     [Role.LOYAL_SERVANT]: 0,
-    [Role.MERLIN]: ROLE_LIMIT,
-    [Role.MORGANA]: ROLE_LIMIT,
-    [Role.PERCIVAL]: ROLE_LIMIT,
+    [Role.MERLIN]: 0,
+    [Role.MORGANA]: 0,
+    [Role.PERCIVAL]: 0,
     [Role.MORDRED]: 0,
     [Role.OBERON]: 0,
     [Role.ASSASSIN]: 0,
     [Role.MINION]: 0,
 }
-
-const REQUIRED_ROLES = new Set<Role>([Role.MERLIN, Role.MORGANA, Role.PERCIVAL]);
-const MAX_ONE_ROLES = new Set<Role>([Role.MORDRED, Role.ASSASSIN, Role.OBERON]);
 
 export class GameConfiguration extends React.PureComponent<IGameConfigurationProps, IState> {
     public static contextTypes = ContextType;
@@ -93,6 +97,7 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
         NO_ROLES_SPECIFIED: "No roles specified",
         GOOD_ROLE: "good role",
         THERE_MUST_BE_EXACTLY: "There must be exactly",
+        We_RECOMMEND: "We recommend",
         INVITE_OTHERS: "Invite others to join this game",
         COPY_LINK: "Copy link",
     }
@@ -114,7 +119,7 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
         const { STRINGS } = GameConfiguration;
         return (
             <div>
-                <H2 className={styles.configurationHeader}>{STRINGS.CONFIGURE_GAME}</H2>
+                <H2>{STRINGS.CONFIGURE_GAME}</H2>
                 <Tabs
                     id={STRINGS.TAB_NAVIGATION}
                     onChange={this.handleTabChange}
@@ -187,25 +192,28 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
     private renderRoles() {
         const { STRINGS } = GameConfiguration;
         const { players, roles } = this.state;
-        return CountableValue.of(ROLES)
+        const allRoles = Object.keys(roles) as Role[];
+        return CountableValue.of(allRoles)
             .map((role, idx) => (
-                <div key={`role-${idx}`} className={styles.role}>
-                    <div className={styles.roleName}>
-                    <span>{role}</span>
-                    {this.maybeRenderInfoTooltip(role)}
+                <div key={`role-${idx}`} className={styles.roleRow}>
+                    <div  className={styles.role}>
+                        <div className={styles.roleName}>
+                        <span>{role}</span>
+                        {this.maybeRenderInfoTooltip(role)}
+                        </div>
+                        <div className={styles.roleCount}>
+                            <NumericInput
+                                rightElement={this.maybeRenderClearButton(role)}
+                                min={0}
+                                max={MAX_ONE_ROLES.has(role) ? 1 : players.length}
+                                value={roles[role]}
+                                onValueChange={this.onValueChange(role)}
+                                buttonPosition={Position.LEFT}
+                                fill={true}
+                            />
+                        </div>
                     </div>
-                    <div className={styles.roleCount}>
-                        <NumericInput
-                            rightElement={this.maybeRenderClearButton(role)}
-                            disabled={REQUIRED_ROLES.has(role)}
-                            min={REQUIRED_ROLES.has(role) ? 1 : 0}
-                            max={REQUIRED_ROLES.has(role) || MAX_ONE_ROLES.has(role) ? 1 : players.length}
-                            value={roles[role]}
-                            onValueChange={this.onValueChange(role)}
-                            buttonPosition={Position.LEFT}
-                            fill={true}
-                        />
-                    </div>
+                    {this.maybeRenderRoleWarning(role)}
                 </div>
             )).getValueOrDefault(
                 <NonIdealState
@@ -214,12 +222,13 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
                 />
             );
     }
+
     private maybeRenderInfoTooltip = (role: Role) => {
-        if (REQUIRED_ROLES.has(role) || MAX_ONE_ROLES.has(role)) {
+        if (MAX_ONE_ROLES.has(role)) {
             const { STRINGS } = GameConfiguration;
-            const prefix = REQUIRED_ROLES.has(role) ? STRINGS.THERE_MUST_BE_EXACTLY : STRINGS.THERE_CAN_BE_AT_MOST;
+            const content = `${STRINGS.THERE_CAN_BE_AT_MOST} ${ROLE_LIMIT} ${role}`;
             return (
-                <Popover content={<div className={styles.roleCountInfoTooltip}>{prefix} {ROLE_LIMIT} {role}</div>}>
+                <Popover content={<div className={styles.roleCountInfoTooltip}>{content}</div>}>
                     <Icon className={styles.infoIcon} icon={IconNames.INFO_SIGN} />
                 </Popover>
             );
@@ -228,7 +237,7 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
 
     private maybeRenderClearButton = (role: Role) => {
         const { roles } = this.state;
-        if (!REQUIRED_ROLES.has(role) && roles[role] !== 0) {
+        if (roles[role] !== 0) {
             return <Button minimal={true} icon={IconNames.REMOVE} onClick={this.clearRole(role)}/>;
         }
     }
@@ -267,21 +276,42 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
         })
     }
 
-
     private maybeRenderStartGameError() {
         return NullableValue.of(this.maybeGetErrorMessage())
-            .map(errorMessage => (
+            .map<JSX.Element | undefined>(errorMessage => (
                 <div className={styles.configurationError}>
                     <Icon iconSize={12} intent={Intent.DANGER} icon={IconNames.ERROR} />
-                    <div>{errorMessage}</div>
+                    <div className={styles.error}>{errorMessage}</div>
+                </div>
+            ))
+            .getOrDefault(this.maybeRenderStartGameWarning());
+    }
+
+    private maybeRenderStartGameWarning() {
+        return NullableValue.of(this.maybeGetWarningMessage())
+            .map(errorMessage => (
+                <div className={styles.configurationError}>
+                    <Icon iconSize={12} intent={Intent.WARNING} icon={IconNames.WARNING_SIGN} />
+                    <div className={styles.warning}>{errorMessage}</div>
+                </div>
+            ))
+            .getOrUndefined();
+    }
+
+    private maybeRenderRoleWarning(role: Role) {
+        const { roles } = this.state;
+        return NullableValue.of(getUnmetDependenciesMessageForRole(roles, role))
+            .map(message => (
+                <div className={styles.roleWarning}>
+                    <Icon iconSize={12} intent={Intent.WARNING} icon={IconNames.WARNING_SIGN} />
+                    <div className={styles.warning}>{message}</div>
                 </div>
             ))
             .getOrUndefined();
     }
 
     private maybeGetErrorMessage() {
-        const { players } = this.state;
-        const { roles } = this.state;
+        const { players, roles } = this.state;
         const { STRINGS } = GameConfiguration;
         const roleCount = getNumRoles(roles);
         if (players.length < roleCount) {
@@ -293,24 +323,28 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
         } else if (players.length > MAX_PLAYER_COUNT) {
             return STRINGS.TOO_MANY_PLAYERS;
         }
-        const numGoodPlayers = calcNumGoodPlayers(roleCount);
-        if (getNumGoodRoles(roles) !== numGoodPlayers) {
-            return `${STRINGS.THERE_MUST_BE_EXACTLY} ${numGoodPlayers} ${STRINGS.GOOD_ROLE}`
-        }
-        for (const role in REQUIRED_ROLES) {
-            if (roles[role as Role] !== ROLE_LIMIT) {
-                return `${STRINGS.THERE_MUST_BE_EXACTLY} ${ROLE_LIMIT} ${role}`
-            }
-        }
         for (const role in MAX_ONE_ROLES) {
             if (roles[role as Role] > ROLE_LIMIT) {
                 return `${STRINGS.THERE_CAN_BE_AT_MOST} ${ROLE_LIMIT} ${role}`
             }
         }
-        for (const role of ROLES) {
+        const allRoles = Object.keys(roles) as Role[];
+        for (const role of allRoles) {
             if (roles[role] < 0) {
                 return `${STRINGS.THERE_CANNOT_BE_NEGATIVE} ${role}`
             }
+        }
+        return undefined;
+    }
+
+    private maybeGetWarningMessage() {
+        const { roles } = this.state;
+        const { roles: roleMap } = this.props.game;
+        const { STRINGS } = GameConfiguration;
+        const roleCount = getNumRoles(roles);
+        const numGoodPlayers = calcNumGoodPlayers(roleCount);
+        if (getNumGoodRoles(roles, roleMap) !== numGoodPlayers) {
+            return `${STRINGS.We_RECOMMEND} ${pluralize(STRINGS.GOOD_ROLE, numGoodPlayers, true)}`
         }
         return undefined;
     }
@@ -323,8 +357,9 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
             gameId,
             playerId,
         } = this.props;
-        const { players, roles } = this.state;
-        const roleList = flatten(ROLES.map(role => times(roles[role], constant(role))));
+        const { players, roles: roleCounts } = this.state;
+        const roles = Object.keys(roleCounts) as Role[];
+        const roleList = flatten(roles.map(role => times(roleCounts[role], constant(role))));
         if (this.canStartGame()) {
             this.services.gameService.startGame(gameId, playerId, myName, roleList, players);
         }
