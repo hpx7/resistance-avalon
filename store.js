@@ -286,7 +286,7 @@ const getGameStatus = (game) => {
     return 'in_progress'
   if (game.assassinTarget === null)
     return 'assassinating'
-  if (game.assassinTarget === game.players.filter(player => player.role === 'merlin'))
+  if (game.assassinTarget === game.players.find(player => player.role === 'merlin').name)
     return 'evil_won'
   return 'good_won'
 }

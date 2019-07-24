@@ -80,7 +80,7 @@ export class Assassination extends React.PureComponent<IAssassinationProps, ISta
                     onChange={this.handleAssassinationTargetChange}
                     selectedValue={this.state.assassinationTarget}
                 >
-                    {this.renderPlayers}
+                    {this.renderPlayers()}
                 </RadioGroup>
                 <Divider />
                 {this.maybeRenderStartGameError()}
