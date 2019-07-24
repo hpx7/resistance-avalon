@@ -3,7 +3,6 @@ import {
     Button,
     H2,
     Intent,
-    Icon,
     Divider,
     RadioGroup,
     Radio,
@@ -59,6 +58,7 @@ export class Assassination extends React.PureComponent<IAssassinationProps, ISta
         return (
             <div>
                 <Dialog
+                    className={styles.assassinationDialog}
                     icon={IconNames.WARNING_SIGN}
                     isOpen={this.state.openDialog && this.state.assassinationTarget != null}
                     onClose={this.toggleAssassinationDialog}
@@ -80,12 +80,11 @@ export class Assassination extends React.PureComponent<IAssassinationProps, ISta
                     onChange={this.handleAssassinationTargetChange}
                     selectedValue={this.state.assassinationTarget}
                 >
-                    {this.renderPlayers}
+                    {this.renderPlayers()}
                 </RadioGroup>
                 <Divider />
-                {this.maybeRenderStartGameError()}
                 <Button
-                    className={styles.assassinateButton}
+                    className={styles.assassinationButton}
                     intent={Intent.SUCCESS}
                     disabled={this.state.assassinationTarget == null}
                     onClick={this.toggleAssassinationDialog}
@@ -96,21 +95,6 @@ export class Assassination extends React.PureComponent<IAssassinationProps, ISta
     }
 
     private handleAssassinationTargetChange = handleStringChange(assassinationTarget => this.setState({ assassinationTarget }));
-
-    private maybeRenderStartGameError() {
-        const { STRINGS } = Assassination;
-        const message = this.state.assassinationTarget == null
-            ? STRINGS.PLEASE_SELECT_MERLIN
-            : undefined;
-        return NullableValue.of(message)
-            .map(errorMessage => (
-                <div className={styles.configurationError}>
-                    <Icon iconSize={12} intent={Intent.DANGER} icon={IconNames.ERROR} />
-                    <div>{errorMessage}</div>
-                </div>
-            ))
-            .getOrUndefined();
-    }
 
     private toggleAssassinationDialog = () => this.setState(prevState => ({ ...prevState, openDialog: !prevState.openDialog }));
 
