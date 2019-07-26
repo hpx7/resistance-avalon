@@ -339,11 +339,10 @@ export class GameConfiguration extends React.PureComponent<IGameConfigurationPro
 
     private maybeGetWarningMessage() {
         const { roles } = this.state;
-        const { roles: roleMap } = this.props.game;
         const { STRINGS } = GameConfiguration;
         const roleCount = getNumRoles(roles);
         const numGoodPlayers = calcNumGoodPlayers(roleCount);
-        if (getNumGoodRoles(roles, roleMap) !== numGoodPlayers) {
+        if (getNumGoodRoles(roles) !== numGoodPlayers) {
             return `${STRINGS.We_RECOMMEND} ${pluralize(STRINGS.GOOD_ROLE, numGoodPlayers, true)}`
         }
         return undefined;

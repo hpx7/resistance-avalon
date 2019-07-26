@@ -25,7 +25,7 @@ import { IconNames, IconName } from "@blueprintjs/icons";
 import { IApplicationState, IGameState } from "../../state";
 import { connect } from "react-redux";
 import { History } from "history";
-import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, GameStatus, Vote } from "../../state/types";
+import { GameAction, IGame, IQuestAttempt, QuestAttemptStatus, GameStatus, Vote, Role } from "../../state/types";
 import { times, constant, random, maxBy } from "lodash-es";
 import { PlayerList } from "./playerList";
 import { assertNever } from "../../common/assertNever";
@@ -40,6 +40,7 @@ import { JoinPath } from "../../paths";
 import { Supplier } from "../../common/supplier";
 import pluralize from "pluralize";
 import { Assassination } from "./assassination/assassination";
+import { isGoodRole } from "../../common/role";
 
 interface IOwnProps {
     history: History;
@@ -716,12 +717,12 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
 
     private onVoteOnQuest = (game: IGame, questAttempt: IQuestAttempt, vote: Vote) => () => {
         const { playerId, playerName } = this.props;
-        const { myRole, roles } = game;
+        const { myRole } = game;
         const { STRINGS } = UnconnectedGame;
         const { gameService, stateService } = this.services;
         NullableValue.of(myRole)
             .map(role => {
-                if (vote === Vote.FAIL && roles[role]) {
+                if (vote === Vote.FAIL && isGoodRole(role)) {
                     stateService.showFailToast(STRINGS.GOOD_CANNOT_FAIL)
                 } else {
                     gameService.voteOnQuest(questAttempt.id, playerId, playerName, vote);
@@ -751,11 +752,11 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
         });
     }
 
-    private renderRoles = (roles: Record<string, boolean>) => {
+    private renderRoles = (roles: Role[]) => {
         const { STRINGS } = UnconnectedGame;
-        return CountableValue.of(Object.keys(roles))
+        return CountableValue.of(roles)
             .map((role, idx) => {
-                const classes = classNames(styles.role, roles[role] ? styles.good : styles.bad);
+                const classes = classNames(styles.role, isGoodRole(role) ? styles.good : styles.bad);
                 return <div key={`${role}-${idx}`} className={classes}>{role}</div>
             }).getValueOrDefault(
                 <NonIdealState

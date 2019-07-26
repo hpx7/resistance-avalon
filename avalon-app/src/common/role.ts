@@ -34,6 +34,14 @@ export const MAX_ONE_ROLES = new Set<Role>([
     Role.OBERON
 ]);
 
+export function isEvilRole(role: Role) {
+    return !roleMap[role];
+}
+
+export function isGoodRole(role: Role) {
+    return roleMap[role];
+}
+
 export function getUnmetDependenciesMessageForRole(roleCounts: Record<Role, number>, role: Role): string | undefined {
     const roles: Role[] = (Object.keys(roleCounts) as Role[]).filter(role => roleCounts[role] > 0);
     const roleSet = new Set(roles);
@@ -58,7 +66,7 @@ export function getRoleCounts(roles: Role[]): Map<Role, number> {
     }, new Map<Role, number>());
 }
 
-export function getNumGoodRoles(roleCounts: Record<Role, number>, roleRecord: { [key: string]: boolean; }): number {
+export function getNumGoodRoles(roleCounts: Record<Role, number>, roleRecord: { [key: string]: boolean; } = roleMap): number {
     if (Object.keys(roleRecord).length === 0) {
         roleRecord = roleMap;
     }
