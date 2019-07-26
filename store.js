@@ -242,7 +242,7 @@ const getState = (game, player) => {
     'id': game.id,
     'creator': game.creator,
     'players': players.map(p => p.name),
-    'roles': game.currentQuest ? utils.flatMap(players, p => ({[p.role]: !evilRoles.includes(p.role)})) : {},
+    'roles': game.currentQuest ? players.map(p => p.role).sort() : {},
     'questConfigurations': game.questConfiguration,
     'myId': player.id,
     'myName': player.name,
@@ -250,7 +250,8 @@ const getState = (game, player) => {
     'knowledge': getPlayerKnowledge(game, player),
     'currentQuest': game.currentQuest ? sanitizeQuest(game, game.currentQuest, player) : null,
     'questHistory': game.questHistory.map(quest => sanitizeQuest(game, quest, player)),
-    'status': getGameStatus(game)
+    'status': getGameStatus(game),
+    'allRoles': Object.keys(roleKnowledge).map(role => ({role, evil: evilRoles.includes(role)}))
   }
 }
 
@@ -258,8 +259,8 @@ const getPlayerKnowledge = (game, player) => {
   const knowledge = roleKnowledge[player.role] || []
   const knownPlayers = game.players.filter(p => p.id !== player.id && knowledge.includes(p.role))
   return {
-    players: knownPlayers.map(p => p.name),
-    roles: utils.flatMap(knownPlayers, p => ({[p.role]: !evilRoles.includes(p.role)}))
+    players: knownPlayers.map(p => p.name).sort(),
+    roles: knownPlayers.map(p => p.role).sort()
   }
 }
 

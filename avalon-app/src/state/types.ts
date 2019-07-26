@@ -89,7 +89,7 @@ export interface IQuestAttempt {
 
 export interface IKnowledge {
     players: string[];
-    roles: { [key: string]: boolean };
+    roles: Role[];
 }
 
 export interface IGame {
@@ -103,7 +103,7 @@ export interface IGame {
     questConfigurations?: number[] | null;
     questHistory: IQuestAttempt[];
     currentQuest?: IQuestAttempt | null;
-    roles: { [key: string]: boolean };
+    roles: Role[];
     status: GameStatus;
     assassinTarget?: string | null;
 }

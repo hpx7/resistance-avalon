@@ -15,6 +15,7 @@ import { IGame, Role } from "../../../state/types";
 import { IconNames } from "@blueprintjs/icons";
 import { NullableValue } from "../../../common/nullableValue"
 import { handleStringChange } from "../../../common/handleStringChange";
+import { isEvilRole } from "../../../common/role";
 
 interface IAssassinationProps {
     game: IGame;
@@ -47,7 +48,7 @@ export class Assassination extends React.PureComponent<IAssassinationProps, ISta
     public render() {
         const { STRINGS } = Assassination;
         const { myRole, roles } = this.props.game;
-        const evilRoles = Object.keys(roles).filter(role => !roles[role]) as Role[];
+        const evilRoles = roles.filter(isEvilRole);
         if (myRole !== Role.ASSASSIN) {
             if (myRole != null && evilRoles.includes(myRole)) {
                 return <div>{STRINGS.DISCUSS_WITH_YOUR_TEAM_MATES}</div>;
