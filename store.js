@@ -267,8 +267,8 @@ const sanitizeQuest = (game, quest, player) => {
   const q = Object.assign({}, quest)
   q.votes = quest.remainingVotes === 0 ? utils.sortBy(quest.votes, 'player') : []
   q.results = quest.remainingResults === 0 ? quest.results.map(result => result.vote).sort() : []
-  q.myVote = (quest.votes.find(vote => vote.player === player.name) || {}).vote
-  q.myResult = (quest.results.find(result => result.player === player.name) || {}).vote
+  q.myVote =  utils.find(quest.votes, vote => vote.player === player.name).vote
+  q.myResult = utils.find(quest.results, result => result.player === player.name).vote
   q.status = getQuestStatus(game, quest)
   delete q.voteStatus
   delete q.failures
@@ -284,10 +284,9 @@ const getGameStatus = (game) => {
     return 'evil_won'
   if (game.questHistory.filter(quest => getQuestStatus(game, quest) === 'passed').length <= 2)
     return 'in_progress'
-  if (game.assassinTarget === null && game.players.find(player => player.role === 'assassin') != null)
+  if (game.players.find(player => player.role === 'assassin') && game.assassinTarget === null)
     return 'assassinating'
-  const merlin = game.players.find(player => player.role === 'merlin');
-  if (merlin != null && game.assassinTarget === merlin.name)
+  if (game.assassinTarget === utils.find(game.players, player => player.role === 'merlin').name)
     return 'evil_won'
   return 'good_won'
 }
