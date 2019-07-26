@@ -109,7 +109,7 @@ const GameModel = (games) => ({
     const proposalRejected = {
       $and: [
         {$eq: ['$currentQuest.remainingVotes', 0]},
-        {$lt: ['$currentQuest.voteStatus', 0]},
+        {$lte: ['$currentQuest.voteStatus', 0]},
         {$lt: ['$currentQuest.attemptNumber', 5]}
       ]
     }
