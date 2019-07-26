@@ -276,7 +276,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                         intent={Intent.DANGER}
                     />
                 );
-            case GameStatus.ASSASSNATING:
+            case GameStatus.ASSASSINATING:
                 return (
                     <Assassination
                         game={game.value}
@@ -771,18 +771,6 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
 
     private setAction = (action: GameAction) => () => this.services.stateService.setGameAction(action);
 
-    private selectAssinationTarget = (target: string) => () => this.setState({ assassinationTarget: target });
-
-    private confirmAssinationTarget = () => {
-        const { assassinationTarget } = this.state;
-        const { gameId, playerId, playerName } = this.props;
-        NullableValue.of(assassinationTarget)
-            .map(target => {
-                this.services.gameService.assassinate(gameId, playerId, playerName, target);
-                return undefined;
-            });
-    }
-
     private setDocumentTitleBasedOnQuestAttempt = (questAttempt: IQuestAttempt) => {
         this.services.stateService.setDocumentTitle(this.getTitleFOrQuestAttempt(questAttempt));
     }
@@ -842,7 +830,7 @@ export class UnconnectedGame extends React.PureComponent<GameProps, IState> {
                 return stateService.showSuccessToast("Good won!");
             case GameStatus.EVIL_WON:
                 return stateService.showFailToast("Evil won!");
-            case GameStatus.ASSASSNATING:
+            case GameStatus.ASSASSINATING:
                 return stateService.showFailToast("3 quests succeeded! Assassin, did you find Merlin?");
             default:
                 return assertNever(status);
