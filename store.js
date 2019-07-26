@@ -251,7 +251,7 @@ const getState = (game, player) => {
     'currentQuest': game.currentQuest ? sanitizeQuest(game, game.currentQuest, player) : null,
     'questHistory': game.questHistory.map(quest => sanitizeQuest(game, quest, player)),
     'status': getGameStatus(game),
-    'allRoles': Object.keys(roleKnowledge).map(role => {role, evil: evilRoles.includes(role)})
+    'allRoles': Object.keys(roleKnowledge).map(role => ({role, evil: evilRoles.includes(role)}))
   }
 }
 
