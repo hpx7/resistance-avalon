@@ -217,7 +217,7 @@ const GameModel = (games) => ({
         console.error(err)
         fn(null)
       } else {
-        const player = game.players.find(player => player.id === playerId)
+        const player = utils.find(game.players, player => player.id === playerId)
         fn(getState(game, player))
       }
     })
@@ -285,7 +285,7 @@ const getGameStatus = (game) => {
     return 'evil_won'
   if (game.questHistory.filter(quest => getQuestStatus(game, quest) === 'passed').length <= 2)
     return 'in_progress'
-  if (game.players.find(player => player.role === 'assassin') && game.assassinTarget === null)
+  if (game.players.some(player => player.role === 'assassin') && game.assassinTarget === null)
     return 'assassinating'
   if (game.assassinTarget === utils.find(game.players, player => player.role === 'merlin').name)
     return 'evil_won'
