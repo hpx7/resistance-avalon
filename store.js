@@ -279,7 +279,7 @@ const sanitizeQuest = (game, quest, player) => {
 const getGameStatus = (game) => {
   if (!game.currentQuest)
     return 'not_started'
-  if (game.questHistory.some(quest => quest.attemptNumber > 5))
+  if (game.currentQuest.attemptNumber === 5 && game.currentQuest.remainingVotes === 0)
     return 'evil_won'
   if (game.questHistory.filter(quest => getQuestStatus(game, quest) === 'failed').length > 2)
     return 'evil_won'
