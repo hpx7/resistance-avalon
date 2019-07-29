@@ -1,4 +1,3 @@
-const mongodb = require('mongodb')
 const utils = require('./utils')
 
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
@@ -28,7 +27,7 @@ const questConfigurations = {
   10: [3, 4, 4, 5, 5]
 }
 
-const GameModel = (games) => ({
+exports.GameModel = (games) => ({
   createGame: (gameId, playerId, playerName, fn) => {
     games.insertOne(
       {
@@ -306,14 +305,4 @@ const getQuestStatus = (game, quest) => {
 
 const didQuestPass = (game, quest) => {
   return quest.failures === 0 || (quest.roundNumber === 4 && game.players.length > 6 && quest.failures === 1)
-}
-
-exports.init = (onReady) => {
-  mongodb.MongoClient.connect(process.env.MONGODB_URI, {useNewUrlParser: true}, (err, client) => {
-    if (err) {
-      console.error(err)
-    } else {
-      onReady(GameModel(client.db().collection('games')))
-    }
-  })
 }
