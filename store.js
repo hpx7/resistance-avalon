@@ -51,7 +51,7 @@ exports.GameModel = (games) => ({
   },
   startGame: (gameId, playerId, playerName, roleList, playerOrder, fn) => {
     const shuffledRoles = utils.shuffle(roleList)
-    const players = playerOrder.map((name, i) => ({order: ALPHABET[i], name, role: roleList[i]}))
+    const players = playerOrder.map((name, i) => ({order: ALPHABET[i], name, role: shuffledRoles[i]}))
     const leader = playerOrder[Math.floor(Math.random() * playerOrder.length)]
     const startingQuest = {
       id: utils.randomId(),
