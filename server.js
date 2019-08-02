@@ -14,7 +14,7 @@ mongodb.MongoClient.connect(mongoUri, {useNewUrlParser: true}).then(
     const broker = pubsub.create(model)
     io(port).on('connection', (socket) => {
       Object.entries(api).forEach(([name, method]) =>
-        socket.on(name, (...args) => wrap(method(...args.slice(0, -1)), args.splice(-1)[0])))
+        socket.on(name, (...args) => wrap(method(...args.slice(0, -1)), args.slice(-1)[0])))
       socket.on('subscribe', (playerId, fn) =>
         wrap(broker.subscribe(socket.id, playerId, state => socket.emit('game', state)), fn))
       socket.on('unsubscribe', (playerId) => broker.unsubscribe(socket.id, playerId))
