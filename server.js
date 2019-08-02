@@ -21,8 +21,8 @@ mongodb.MongoClient.connect(mongoUri, {useNewUrlParser: true}).then(
       socket.on('disconnect', () => broker.unsubscribeAll(socket.id))
     })
   },
-  err => console.error(err)
+  console.error
 )
 
 const wrap = (promise, fn) =>
-  promise.then(result => fn({result}), () => fn({error: 'Unexpected error occurred'}))
+  promise.then(fn, () => fn({error: 'Unexpected error occurred'}))
