@@ -1,42 +1,28 @@
 const utils = require('./utils')
 
-exports.api = (model, socket) => ({
-  createGame: (playerName, fn) => {
+exports.api = (model) => ({
+  createGame: async (playerName) => {
     const gameId = utils.randomId()
     const playerId = utils.randomId()
-    socket.join(playerId)
-    model.createGame(gameId, playerId, playerName, fn)
+    return model.createGame(gameId, playerId, playerName).then(result => result || {gameId, playerId})
   },
-  joinGame: (gameId, playerName, fn) => {
+  joinGame: async (gameId, playerName) => {
     const playerId = utils.randomId()
-    socket.join(playerId)
-    model.joinGame(gameId, playerId, playerName, fn)
+    return model.joinGame(gameId, playerId, playerName).then(result => result || {playerId})
   },
-  rejoinGame: (playerId, fn) => {
-    socket.join(playerId)
-    model.fetchState(playerId, (state) => {
-      if (state) {
-        socket.emit('game', state)
-      }
-      fn({error: state ? null : 'Game not found'})
-    })
+  startGame: async (gameId, playerId, playerName, roleList, playerOrder) => {
+    return model.startGame(gameId, playerId, playerName, roleList, playerOrder)
   },
-  leaveGame: (playerId) => {
-    socket.leave(playerId)
+  proposeQuest: async (questId, playerId, playerName, proposedMembers) => {
+    return model.proposeQuest(questId, playerId, playerName, proposedMembers)
   },
-  startGame: (gameId, playerId, playerName, roleList, playerOrder, fn) => {
-    model.startGame(gameId, playerId, playerName, roleList, playerOrder, fn)
+  voteForProposal: async (questId, playerId, playerName, vote) => {
+    return model.voteForProposal(questId, playerId, playerName, vote)
   },
-  proposeQuest: (questId, playerId, playerName, proposedMembers, fn) => {
-    model.proposeQuest(questId, playerId, playerName, proposedMembers, fn)
+  voteInQuest: async (questId, playerId, playerName, vote) => {
+    return model.voteInQuest(questId, playerId, playerName, vote)
   },
-  voteForProposal: (questId, playerId, playerName, vote, fn) => {
-    model.voteForProposal(questId, playerId, playerName, vote, fn)
-  },
-  voteInQuest: (questId, playerId, playerName, vote, fn) => {
-    model.voteInQuest(questId, playerId, playerName, vote, fn)
-  },
-  assassinate: (gameId, playerId, playerName, target, fn) => {
-    model.assassinate(gameId, playerId, playerName, target, fn)
+  assassinate: async (gameId, playerId, playerName, target) => {
+    return model.assassinate(gameId, playerId, playerName, target)
   }
 })
