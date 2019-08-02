@@ -1,19 +1,14 @@
 const utils = require('./utils')
 
-exports.api = (model, socket) => ({
+exports.api = (model) => ({
   createGame: async (playerName) => {
     const gameId = utils.randomId()
     const playerId = utils.randomId()
-    socket.join(playerId)
-    return model.createGame(gameId, playerId, playerName)
+    return model.createGame(gameId, playerId, playerName).then(result => result || {gameId, playerId})
   },
   joinGame: async (gameId, playerName) => {
     const playerId = utils.randomId()
-    socket.join(playerId)
-    return model.joinGame(gameId, playerId, playerName)
-  },
-  leaveGame: async (playerId) => {
-    socket.leave(playerId)
+    return model.joinGame(gameId, playerId, playerName).then(result => result || {playerId})
   },
   startGame: async (gameId, playerId, playerName, roleList, playerOrder) => {
     return model.startGame(gameId, playerId, playerName, roleList, playerOrder)

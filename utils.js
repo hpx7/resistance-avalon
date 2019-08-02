@@ -1,15 +1,5 @@
 module.exports = {
   randomId: () => Math.random().toString(36).substring(2),
-  callback: (fn) => (err, result) => {
-    if (err) {
-      console.error(err)
-      fn({error: 'Unexpected database error occurred'})
-    } else if (result.modifiedCount === 0 || result.insertedCount === 0) {
-      fn({error: 'Invalid operation'})
-    } else {
-      fn({error: null})
-    }
-  },
   find: (items, fn) => {
     return items.find(fn) || {}
   },

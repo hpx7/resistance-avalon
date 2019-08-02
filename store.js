@@ -223,7 +223,7 @@ const wrap = (promise) => promise.then(result => {
   if (result.modifiedCount === 0 || result.insertedCount === 0) {
     return {error: 'Invalid operation'}
   }
-  return {error: null}
+  return null
 })
 
 const createPlayer = (playerId, playerName) => ({
