@@ -28,8 +28,8 @@ const questConfigurations = {
 }
 
 exports.GameModel = (games) => ({
-  createGame: (gameId, playerId, playerName, fn) => {
-    games.insertOne(
+  createGame: (gameId, playerId, playerName) => {
+    return wrap(games.insertOne(
       {
         id: gameId,
         creator: playerName,
@@ -39,17 +39,15 @@ exports.GameModel = (games) => ({
         currentQuest: null,
         questHistory: [],
         assassinTarget: null
-     },
-     utils.callback(fn))
+     }))
   },
-  joinGame: (gameId, playerId, playerName, fn) => {
-    games.updateOne(
+  joinGame: (gameId, playerId, playerName) => {
+    return wrap(games.updateOne(
       {id: gameId, 'players.name': {$ne: playerName}, currentQuest: null},
-      {$push: {players: createPlayer(playerId, playerName)}},
-      utils.callback(fn)
-    )
+      {$push: {players: createPlayer(playerId, playerName)}}
+    ))
   },
-  startGame: (gameId, playerId, playerName, roleList, playerOrder, fn) => {
+  startGame: (gameId, playerId, playerName, roleList, playerOrder) => {
     const shuffledRoles = utils.shuffle(roleList)
     const players = playerOrder.map((name, i) => ({order: ALPHABET[i], name, role: shuffledRoles[i]}))
     const leader = playerOrder[Math.floor(Math.random() * playerOrder.length)]
@@ -68,7 +66,7 @@ exports.GameModel = (games) => ({
       failures: 0
     }
 
-    games.updateOne(
+    return wrap(games.updateOne(
       {
         id: gameId,
         creator: playerName,
@@ -86,12 +84,11 @@ exports.GameModel = (games) => ({
           ))
         }
       },
-      {arrayFilters: players.map(({order, name}) => ({[`${order}.name`]: name}))},
-      utils.callback(fn)
-    )
+      {arrayFilters: players.map(({order, name}) => ({[`${order}.name`]: name}))}
+    ))
   },
-  proposeQuest: (questId, playerId, playerName, proposedMembers, fn) => {
-    games.updateOne(
+  proposeQuest: (questId, playerId, playerName, proposedMembers) => {
+    return wrap(games.updateOne(
       {
         'players.name': {$all: proposedMembers},
         players: {$elemMatch: {id: playerId, name: playerName}},
@@ -100,11 +97,10 @@ exports.GameModel = (games) => ({
         'currentQuest.leader': playerName,
         'currentQuest.size': proposedMembers.length
       },
-      {$set: {'currentQuest.members': proposedMembers}},
-      utils.callback(fn)
-    )
+      {$set: {'currentQuest.members': proposedMembers}}
+    ))
   },
-  voteForProposal: (questId, playerId, playerName, vote, fn) => {
+  voteForProposal: (questId, playerId, playerName, vote) => {
     const proposalRejected = {
       $and: [
         {$eq: ['$currentQuest.remainingVotes', 0]},
@@ -126,7 +122,7 @@ exports.GameModel = (games) => ({
       remainingResults: '$currentQuest.size',
       failures: 0
     }
-    games.updateOne(
+    return wrap(games.updateOne(
       {
         players: {$elemMatch: {id: playerId, name: playerName}},
         'currentQuest.id': questId,
@@ -147,11 +143,10 @@ exports.GameModel = (games) => ({
             questHistory: {$cond: [proposalRejected, {$concatArrays: ['$questHistory', ['$currentQuest']]}, '$questHistory']}
           }
         }
-      ],
-      utils.callback(fn)
-    )
+      ]
+    ))
   },
-  voteInQuest: (questId, playerId, playerName, vote, fn) => {
+  voteInQuest: (questId, playerId, playerName, vote) => {
     const votingComplete = {
       $and: [
         {$eq: ['$currentQuest.remainingResults', 0]},
@@ -172,7 +167,7 @@ exports.GameModel = (games) => ({
       remainingResults: {$arrayElemAt: ['$questConfiguration', '$currentQuest.roundNumber']},
       failures: 0
     }
-    games.updateOne(
+    return wrap(games.updateOne(
       {
         players: {$elemMatch: {id: playerId, name: playerName, role: {$in: rolesForVote(vote)}}},
         'currentQuest.id': questId,
@@ -195,30 +190,25 @@ exports.GameModel = (games) => ({
             questHistory: {$cond: [votingComplete, {$concatArrays: ['$questHistory', ['$currentQuest']]}, '$questHistory']}
           }
         }
-      ],
-      utils.callback(fn)
-    )
+      ]
+    ))
   },
-  assassinate: (gameId, playerId, playerName, target, fn) => {
-    games.updateOne(
+  assassinate: (gameId, playerId, playerName, target) => {
+    return wrap(games.updateOne(
       {
         id: gameId,
         players: {$elemMatch: {id: playerId, name: playerName, role: 'assassin'}},
         assassinTarget: null
       },
-      {$set: {assassinTarget: target}},
-      utils.callback(fn)
-    )
+      {$set: {assassinTarget: target}}
+    ))
   },
-  fetchState: (playerId, fn) => {
-    games.findOne({'players.id': playerId}, (err, game) => {
-      if (err) {
-        console.error(err)
-        fn(null)
-      } else {
-        const player = utils.find(game.players, player => player.id === playerId)
-        fn(getState(game, player))
+  fetchState: (playerId) => {
+    return games.findOne({'players.id': playerId}).then(game => {
+      if (!game) {
+        return {error: 'Invalid operation'}
       }
+      return getState(game, utils.find(game.players, player => player.id === playerId))
     })
   },
   onUpdate: (fn) => {
@@ -227,6 +217,13 @@ exports.GameModel = (games) => ({
       game.players.forEach(player => fn(player.id, getState(game, player)))
     })
   }
+})
+
+const wrap = (promise) => promise.then(result => {
+  if (result.modifiedCount === 0 || result.insertedCount === 0) {
+    return {error: 'Invalid operation'}
+  }
+  return {error: null}
 })
 
 const createPlayer = (playerId, playerName) => ({
@@ -241,7 +238,7 @@ const getState = (game, player) => {
     'id': game.id,
     'creator': game.creator,
     'players': players.map(p => p.name),
-    'roles': game.currentQuest ? players.map(p => p.role).sort() : {},
+    'roles': game.currentQuest ? players.map(p => p.role).sort() : [],
     'questConfigurations': game.questConfiguration,
     'myId': player.id,
     'myName': player.name,
